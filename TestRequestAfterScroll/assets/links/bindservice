@@ -1,0 +1,17 @@
+https://developer.android.com/guide/components/bound-services.html
+https://stackoverflow.com/questions/13343627/subscribing-or-binding-to-an-existing-intent-service
+http://www.vogella.com/tutorials/AndroidServices/article.html
+
+
+LocalService
+https://developer.android.com/reference/android/app/Service.html#LocalServiceSample
+
+// Bind service - estudar isso a fundo
+https://developer.android.com/guide/components/bound-services.html
+
+
+http://www.vogella.com/tutorials/AndroidServices/article.html
+https://newfivefour.com/android-service-handler-tutorial.html
+
+https://developer.android.com/reference/android/os/ResultReceiver.html
+https://commonsware.com/blog/2010/08/11/activity-notification-ordered-broadcast.html

@@ -16,6 +16,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".services.ServiceAuthTwitter"
+            android:exported="false" />
+        <service
+            android:name=".services.ServiceSearchTwitterAPI"
+            android:exported="false" />
+        <service
+            android:name=".services.MessageService"
+            android:enabled="true"
+            android:exported="true"></service>
     </application>
 
 </manifest>
