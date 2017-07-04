@@ -10,14 +10,68 @@ import android.os.Parcelable;
 
 public class Info implements Parcelable {
 
+    private String id;
     private Bitmap image;
-    private String title, text;
+    private String title, text, urlImage;
+    private Long date;
 
-
-    public Info() {
+    public Bitmap getImage() {
+        return image;
     }
 
+    public void setImage(Bitmap image) {
+        this.image = image;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    public String getUrlImage() {
+        return urlImage;
+    }
+
+    public void setUrlImage(String urlImage) {
+        this.urlImage = urlImage;
+    }
+
+    public Long getDate() {
+        return date;
+    }
+
+    public void setDate(Long date) {
+        this.date = date;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public Info() {}
+
     public Info(Parcel in) {
+        this.title      = in.readString();
+        this.text       = in.readString();
+        this.urlImage   = in.readString();
+        this.image      = (Bitmap) in.readValue(Bitmap.class.getClassLoader());
+        this.date       = (Long) in.readValue(Long.class.getClassLoader());
+        this.id         = (String) in.readValue(String.class.getClassLoader());
     }
 
     @Override
@@ -26,11 +80,16 @@ public class Info implements Parcelable {
     }
 
     @Override
-    public void writeToParcel(Parcel dest, int flags) {}
-
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(this.title);
+        dest.writeString(this.text);
+        dest.writeString(this.urlImage);
+        dest.writeValue(this.image);
+        dest.writeValue(this.date);
+        dest.writeValue(this.id);
+    }
 
     public static final Parcelable.Creator<Info> CREATOR = new Parcelable.Creator<Info>() {
-
         @Override
         public Info createFromParcel(Parcel source) {
             return new Info(source);
@@ -41,4 +100,7 @@ public class Info implements Parcelable {
             return new Info[size];
         }
     };
+
+
+
 }

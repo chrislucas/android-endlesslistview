@@ -1,6 +1,5 @@
 package imagineapps.testrequestafterscroll.services;
 
-import android.app.IntentService;
 import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
@@ -15,6 +14,12 @@ import imagineapps.testrequestafterscroll.http.RequestAuthTwitterAPI;
 import imagineapps.uptolv.action.DoOnBackground;
 import imagineapps.uptolv.action.DoAsyncTasks;
 
+
+/**
+ * Ciclo
+ * onCreate
+ * onBind
+ * */
 
 public class ServiceAuthTwitter extends Service {
 
@@ -55,7 +60,6 @@ public class ServiceAuthTwitter extends Service {
         DoOnBackground action       = new RequestAuthTwitterAPI(handler, url, params);
         DoAsyncTasks doAsyncTasks   = new DoAsyncTasks(action);
         doAsyncTasks.execute();
-
     }
 
     @Nullable
@@ -63,8 +67,6 @@ public class ServiceAuthTwitter extends Service {
     public IBinder onBind(Intent intent) {
         return iBinder;
     }
-
-
 
     public class LocalBinder extends Binder {
         public ServiceAuthTwitter getInstance() {

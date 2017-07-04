@@ -25,8 +25,8 @@ import imagineapps.uptolv.utils.http.ModelHTTPRequest;
 
 public class RequestAuthTwitterAPI extends ModelHTTPRequest {
 
-    private static final String KEY     = "ocEL25NbST766M5SYZlSLbcnU";
-    private static final String SECRET  = "xmoL0nS4YGMq6IHPawe7suKJTq3lbCo9RU5mZvlVE5hZ2ExO11";
+    private static final String KEY     = "lrCqswUocOPi6FAgGljnUdSZK";
+    private static final String SECRET  = "oTjwPTCJZjljcyIfYDMMwFyB7W0FbcrY5jxMO2JvU6nnA6OSyE";
 
     private Handler handler;
 
@@ -44,14 +44,10 @@ public class RequestAuthTwitterAPI extends ModelHTTPRequest {
     }
 
     public static class AuthTwitter implements Parcelable {
-
         private JSONObject jsonObject;
-
         public AuthTwitter() {}
-
         public AuthTwitter(Parcel in) {
             jsonObject = (JSONObject) in.readValue(JSONObject.class.getClassLoader());
-
         }
 
         public JSONObject getJsonObject() {
@@ -118,10 +114,10 @@ public class RequestAuthTwitterAPI extends ModelHTTPRequest {
     public void afterExecution(List<Parcelable> data) {
         if(handler != null) {
             Message message = new Message();
-            message.what    = MainActivity.INTERNAL_MSG;
+            message.what    = MainActivity.HANDLER_MSG_AUTH_TWITTER;
             Bundle bundle   = new Bundle();
             ArrayList list  = (ArrayList<? extends Parcelable>) data;
-            bundle.putParcelableArrayList(MainActivity.BUNDLE_DATA_API, list);
+            bundle.putParcelableArrayList(MainActivity.BUNDLE_DATA_ARRAYLIST_API, list);
             message.setData(bundle);
             handler.sendMessage(message);
         }

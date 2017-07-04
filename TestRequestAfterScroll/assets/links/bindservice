@@ -2,6 +2,8 @@ https://developer.android.com/guide/components/bound-services.html
 https://stackoverflow.com/questions/13343627/subscribing-or-binding-to-an-existing-intent-service
 http://www.vogella.com/tutorials/AndroidServices/article.html
 
+Formas de implementar um serviço em android
+https://developer.android.com/guide/components/services.html?hl=pt-br
 
 LocalService
 https://developer.android.com/reference/android/app/Service.html#LocalServiceSample
@@ -15,3 +17,11 @@ https://newfivefour.com/android-service-handler-tutorial.html
 
 https://developer.android.com/reference/android/os/ResultReceiver.html
 https://commonsware.com/blog/2010/08/11/activity-notification-ordered-broadcast.html
+
+
+What is START_STICKY,START_NOT_STICKY and START_REDELIVER_INTENT Service
+
+https://stackoverflow.com/questions/14054588/what-is-start-sticky-start-not-sticky-and-start-redeliver-intent-service
+https://stackoverflow.com/questions/9093271/start-sticky-and-start-not-sticky
+
+https://developer.android.com/reference/android/app/Service.html

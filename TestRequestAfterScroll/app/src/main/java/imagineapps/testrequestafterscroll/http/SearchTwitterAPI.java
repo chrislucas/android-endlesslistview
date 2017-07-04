@@ -1,5 +1,8 @@
 package imagineapps.testrequestafterscroll.http;
 
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
@@ -13,6 +16,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import imagineapps.testrequestafterscroll.MainActivity;
+import imagineapps.testrequestafterscroll.UtilsSimpleFormatDate;
+import imagineapps.testrequestafterscroll.entitiy.Info;
 import imagineapps.uptolv.utils.http.ModelHTTPRequest;
 
 /**
@@ -21,11 +27,13 @@ import imagineapps.uptolv.utils.http.ModelHTTPRequest;
 
 public class SearchTwitterAPI extends ModelHTTPRequest {
 
+    private Handler handler;
     private String auth;
 
-    public SearchTwitterAPI(String url, String auth) {
+    public SearchTwitterAPI(String url, String auth, Handler handler) {
         super(url);
-        this.auth = auth;
+        this.auth       = auth;
+        this.handler    = handler;
     }
 
     public SearchTwitterAPI(String url, Map<String, String> parameters) {
@@ -33,12 +41,8 @@ public class SearchTwitterAPI extends ModelHTTPRequest {
     }
 
     public static class ResponseTwitter implements Parcelable {
-
-        public ResponseTwitter() {
-        }
-
-        public ResponseTwitter(Parcel in) {
-        }
+        public ResponseTwitter() {}
+        public ResponseTwitter(Parcel in) {}
 
         @Override
         public int describeContents() {
@@ -67,10 +71,35 @@ public class SearchTwitterAPI extends ModelHTTPRequest {
         List<Parcelable> data = new ArrayList<>();
         try {
             String url = getUrl();
-            HttpRequest request     = HttpRequest.get(url).authorization("Bearer" + auth);
+            HttpRequest request = HttpRequest
+                    .get(url)
+                    .authorization("Bearer " + auth);
             String response         = request.body();
             JSONObject jsonObject   = new JSONObject(response);
-            JSONArray jsonArray     = jsonObject.getJSONArray("statuses");
+            if(!jsonObject.has("errors")) {
+                if(jsonObject.has("statuses")) {
+                    JSONArray jsonArray = jsonObject.getJSONArray("statuses");
+                    for(int i=0; i<jsonArray.length(); i++) {
+                        JSONObject tweetInfo = jsonArray.getJSONObject(i);
+                        Info info = new Info();
+                        String id = tweetInfo.getString("id");
+                        info.setText(tweetInfo.getString("text"));
+                        String createAt = tweetInfo.getString("created_at");
+                        long time       = UtilsSimpleFormatDate.convertUTCToMilliseconds(createAt, "EEE MMM d HH:mm:ss Z yyyy");
+                        String dateFmt  = UtilsSimpleFormatDate.convertLongToDateFormat(time);
+                        info.setDate(time);
+                        //info.setTitle(tweetInfo.getString("source"));
+                        JSONObject jsonUser         = tweetInfo.getJSONObject("user");
+                        String urlImageUser         = jsonUser.getString("profile_image_url");
+                        String urlImageBackground   = jsonUser.getString("profile_background_image_url");
+                        String userName             = jsonUser.getString("name");
+                        info.setTitle(userName);
+                        info.setUrlImage(urlImageBackground);
+                        data.add(info);
+                    }
+                }
+            }
+            else {}
         } catch (Exception e) {
             Log.e("EXCP_SEARCH_TWITTER", e.getMessage());
         }
@@ -79,6 +108,14 @@ public class SearchTwitterAPI extends ModelHTTPRequest {
 
     @Override
     public void afterExecution(List<Parcelable> data) {
-
+        if(handler != null) {
+            Message message = new Message();
+            message.what    = MainActivity.HANDLER_MSG_TWITTER_SEARCH;
+            Bundle bundle   = new Bundle();
+            ArrayList list  = (ArrayList<? extends Parcelable>) data;
+            bundle.putParcelableArrayList(MainActivity.BUNDLE_DATA_ARRAYLIST_API, list);
+            message.setData(bundle);
+            handler.sendMessage(message);
+        }
     }
 }

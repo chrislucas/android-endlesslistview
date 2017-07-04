@@ -8,8 +8,7 @@ import android.os.Message;
 import android.os.Messenger;
 
 public class MessageService extends Service {
-    public MessageService() {
-    }
+    public MessageService() {}
 
     /**
      * Criando uma especializacao de handler que podera se comunicar com
@@ -18,7 +17,6 @@ public class MessageService extends Service {
     public class CustomHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
-            //super.handleMessage(msg);
             switch (msg.what) {
                 default:
                     super.handleMessage(msg);

@@ -12,6 +12,8 @@ public abstract class ModelHTTPRequest implements DoOnBackground {
     protected String url;
     protected Map<String, String> parameters;
 
+    public ModelHTTPRequest() {}
+
     public ModelHTTPRequest(String url) {
         this.url = url;
     }
