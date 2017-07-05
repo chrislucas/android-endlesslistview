@@ -78,14 +78,16 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String BUNDLE_STRING_SEARCH = "BUNDLE_STRING_SEARCH";
     private static final String BUNDLE_STRING_TOKEN = "BUNDLE_STRING_TOKEN";
+    private static final String BUNDLE_QUANTITY_POST = "BUNDLE_QUANTITY_POST";
     private static final String BUNDLE_LIST_RESULT = "BUNDLE_LIST_RESULT";
+    private static final String BUNDLE_LIST_AUXILIAR = "BUNDLE_LIST_AUXILIAR";
 
     public static final int HANDLER_MSG_AUTH_TWITTER        = 0xf0;
     public static final int HANDLER_MSG_TWITTER_SEARCH      = 0xf1;
     public static final int HANDLER_MSG_DOWNLOAD_BITMAP     = 0xf2;
     public static final String BUNDLE_DATA_ARRAYLIST_API    = "BUNDLE_DATA_API";
 
-    private static final int LIMIT_SEARCH = 5;
+    private static final int LIMIT_SEARCH = 7;
 
     private Handler handlerAuthTwitter = new Handler() {
         @Override
@@ -187,15 +189,13 @@ public class MainActivity extends AppCompatActivity {
             auxiliarList.addAll(data);
             int lastIdx = completeList.size() == 0 ? 0 : completeList.size() - 1;
             completeList.addAll(lastIdx, auxiliarList);
-
             Collections.sort(completeList);
-
             adapterListView.notifyDataSetChanged();
         }
         updateInfoSizeList();
     }
 
-    public  void hiddenKeyBoard() {
+    public void hiddenKeyBoard() {
         View view = getCurrentFocus();
         if(view != null) {
             InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -298,6 +298,8 @@ public class MainActivity extends AppCompatActivity {
             textSearched    = savedInstanceState.getString(BUNDLE_STRING_SEARCH);
             accessToken     = savedInstanceState.getString(BUNDLE_STRING_TOKEN);
             completeList    = savedInstanceState.getParcelableArrayList(BUNDLE_LIST_RESULT);
+            countPost       = savedInstanceState.getInt(BUNDLE_QUANTITY_POST);
+            updateInfoSizeList();
         }
 
         quantityMessage = (TextView) findViewById(R.id.quantity_data);
@@ -320,11 +322,16 @@ public class MainActivity extends AppCompatActivity {
                  * lista for maior do que o ultimo registrado, quer dizer que o usuario
                  * esta descendo na lista de elementos
                  * */
-                scrollUp = firstVisiblePosition <= lastVisiblePosition;
+                scrollUp = firstVisiblePosition < lastVisiblePosition || (firstVisiblePosition | lastVisiblePosition) == 0;
                 //
+                int qPosts = completeList.size();
                 //Log.i("SCROLL_STATE", String.valueOf(scrollState));
-                Log.i("SCROLL", String.format("%s First: %d Last: %d", (scrollUp ? "UP" : "DOWN")
-                        , firstVisiblePosition, lastVisiblePosition));
+                Log.i("SCROLL", String.format("%s First: %d Last: %d Posts %d"
+                    , (scrollUp ? "UP" : "DOWN")
+                    , firstVisiblePosition
+                    , lastVisiblePosition
+                    , qPosts)
+                );
                 // ultimo elemento da lista dos ultimos pesquisados
                 Info lastInfo       = completeList.get(0);
                 Info firstInfo      = auxiliarList.get(auxiliarList.size() - 1);
@@ -333,7 +340,8 @@ public class MainActivity extends AppCompatActivity {
                 switch (scrollState) {
                     // O usuario executou o
                     case SCROLL_STATE_FLING:
-                        if(!scrollUp) {
+                        if(!scrollUp && (qPosts - lastVisiblePosition) < 5) {
+                            Log.i("UPDATE_POST", "DOWNLOAD_POSTS");
                             if(textSearched != null && !textSearched.equals("") && accessToken != null) {
                                 doRequest(lastInfoId, firstInfoId);
                             }
@@ -351,7 +359,8 @@ public class MainActivity extends AppCompatActivity {
                  * Se o usuario chager ao fim da lista, o listener nao sabera identificar
                  * que o mesmo pode fazer um movimento da tela
                  * */
-                if(lastVisiblePosition == completeList.size() - 2) {
+                if((qPosts - lastVisiblePosition) < 5) {
+                    Log.i("UPDATE_POST", "FIM DA LISTA. DOWNLOAD_POSTS");
                     if(textSearched != null && !textSearched.equals("") && accessToken != null) {
                         doRequest(lastInfoId, firstInfoId);
                     }
@@ -383,8 +392,7 @@ public class MainActivity extends AppCompatActivity {
         ).toString();
         url = url.replaceAll("\\s", "%20");
         if(!isServiceUpdateTwitterSearchBinded) {
-            doBindServiceTwitterSearch(connectionWithServiceUpdateTwitterSearch, textSearched, url);
-            isServiceUpdateTwitterSearchBinded = true;
+            isServiceUpdateTwitterSearchBinded = doBindServiceTwitterSearch(connectionWithServiceUpdateTwitterSearch, textSearched, url);
         }
     }
 
@@ -395,12 +403,12 @@ public class MainActivity extends AppCompatActivity {
             outState.putBoolean(bindServiceTwitterAuth, isServiceTwitterAuthBinded);
             outState.putBoolean(bindServiceTwitterSearch, isServiceTwitterSearchBinded);
             outState.putBoolean(bindServiceUpdateTwitterSearch, isServiceUpdateTwitterSearchBinded);
-
             outState.putBoolean(bindServiceDownloadBitmapBinded, isServiceDownloadBitmapBinded);
             outState.putString(textSearched, BUNDLE_STRING_SEARCH);
             outState.putString(accessToken, BUNDLE_STRING_TOKEN);
-
             outState.putParcelableArrayList(BUNDLE_LIST_RESULT, (ArrayList<? extends Parcelable>) completeList);
+            outState.putParcelableArrayList(BUNDLE_LIST_AUXILIAR, (ArrayList<? extends Parcelable>) auxiliarList);
+            outState.putInt(BUNDLE_QUANTITY_POST, countPost);
         }
     }
 
@@ -413,8 +421,10 @@ public class MainActivity extends AppCompatActivity {
             isServiceUpdateTwitterSearchBinded = savedInstanceState.getBoolean(bindServiceUpdateTwitterSearch);
             isServiceDownloadBitmapBinded   = savedInstanceState.getBoolean(bindServiceDownloadBitmapBinded);
             textSearched = savedInstanceState.getString(BUNDLE_STRING_SEARCH);
-            accessToken = savedInstanceState.getString(BUNDLE_STRING_TOKEN);
+            accessToken  = savedInstanceState.getString(BUNDLE_STRING_TOKEN);
             completeList = savedInstanceState.getParcelableArrayList(BUNDLE_LIST_RESULT);
+            auxiliarList = savedInstanceState.getParcelableArrayList(BUNDLE_LIST_AUXILIAR);
+            countPost = savedInstanceState.getInt(BUNDLE_QUANTITY_POST);
         }
     }
 
@@ -424,8 +434,7 @@ public class MainActivity extends AppCompatActivity {
             String url = Uri.parse(String.format("https://api.twitter.com/1.1/" +
                     "search/tweets.json?q=%s&lang=%s&count=%d", textSearched, "pt", LIMIT_SEARCH)).toString();
             url = url.replaceAll("\\s", "%20");
-            doBindServiceTwitterSearch(connectionWithServiceTwitterSearch, textSearched, url);
-            isServiceTwitterSearchBinded = true;
+            isServiceTwitterSearchBinded = doBindServiceTwitterSearch(connectionWithServiceTwitterSearch, textSearched, url);
         }
         hiddenKeyBoard();
     }
@@ -433,19 +442,18 @@ public class MainActivity extends AppCompatActivity {
     private void doBindServiceTwitterAuth() {
         if(!isServiceTwitterAuthBinded) {
             Intent intent = new Intent(this, ServiceAuthTwitter.class);
-            bindService(intent, connectionWithServiceTwitterAuth, Context.BIND_AUTO_CREATE);
-            isServiceTwitterAuthBinded = true;
+            isServiceTwitterAuthBinded = bindService(intent, connectionWithServiceTwitterAuth, Context.BIND_AUTO_CREATE);
         }
     }
 
-    private void doBindServiceTwitterSearch(ServiceConnection serviceConnection, String text, String url) {
+    private boolean doBindServiceTwitterSearch(ServiceConnection serviceConnection, String text, String url) {
         Intent intent = new Intent(getApplicationContext(), ServiceSearchTwitterAPI.class);
         Bundle bundle = new Bundle();
         bundle.putString(ServiceSearchTwitterAPI.TEXT_SEARCH, text);
         bundle.putString(ServiceSearchTwitterAPI.TOKEN_AUTHORIZATION, accessToken);
         bundle.putString(ServiceSearchTwitterAPI.URL, url);
         intent.putExtras(bundle);
-        bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+        return bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
     }
 
     /**
@@ -459,8 +467,7 @@ public class MainActivity extends AppCompatActivity {
             Bundle bundle = new Bundle();
             bundle.putParcelableArrayList(ServiceDownloadBitmap.BUNDLE_INFO_LIST, (ArrayList<? extends Parcelable>) auxiliarList);
             intent.putExtras(bundle);
-            bindService(intent, connectionWithDownloadBitmap,  Context.BIND_AUTO_CREATE);
-            isServiceDownloadBitmapBinded = true;
+            isServiceDownloadBitmapBinded = bindService(intent, connectionWithDownloadBitmap,  Context.BIND_AUTO_CREATE);
         }
     }
 
@@ -506,6 +513,5 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void finish() {
         super.finish();
-        doUnbindServices();
     }
 }
