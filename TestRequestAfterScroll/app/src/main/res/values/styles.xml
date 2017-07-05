@@ -16,6 +16,10 @@
         <item name="android:textStyle">bold</item>
     </style>
 
+    <style name="Info.General.Title.Center" parent="Info.General.Title">
+        <item name="android:textAlignment">center</item>
+    </style>
+
     <style name="Info.General.Text" parent="Info.General">
         <item name="android:textSize">16sp</item>
     </style>

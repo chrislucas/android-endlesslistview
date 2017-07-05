@@ -15,7 +15,7 @@ import android.widget.TextView;
 import java.util.List;
 
 import imagineapps.testrequestafterscroll.R;
-import imagineapps.testrequestafterscroll.UtilsSimpleFormatDate;
+import imagineapps.testrequestafterscroll.utils.UtilsSimpleFormatDate;
 import imagineapps.testrequestafterscroll.entitiy.Info;
 
 /**

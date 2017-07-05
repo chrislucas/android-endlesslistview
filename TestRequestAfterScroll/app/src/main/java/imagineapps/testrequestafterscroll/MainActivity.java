@@ -5,6 +5,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.IBinder;
@@ -14,16 +15,19 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AbsListView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import imagineapps.testrequestafterscroll.adapter.AdapterListView;
@@ -32,31 +36,56 @@ import imagineapps.testrequestafterscroll.http.RequestAuthTwitterAPI;
 import imagineapps.testrequestafterscroll.services.ServiceAuthTwitter;
 import imagineapps.testrequestafterscroll.services.ServiceDownloadBitmap;
 import imagineapps.testrequestafterscroll.services.ServiceSearchTwitterAPI;
+import imagineapps.testrequestafterscroll.utils.UtilsBitmap;
 
 public class MainActivity extends AppCompatActivity {
 
     private ListView listView;
-    private List<Info> list;
+
+    /**
+     * Duas lista de Post
+     * completeList: lista de post baixados
+     * auxiliarList: lista auxiliar que guarda os ultimos posts baixados
+     *
+     * Quando o usuario faz scrollDown na listview, o aplicativo procura por
+     * mais posts na API. Se houver mais, a lista de posts e atualizada, e as
+     * imagens relacionadas aos novos posts sao baixadas. Para que so as imagens
+     * dos novos posts sejam baixadas, temos a lista auxiliar, que mantem sempre
+     * os ultimos N posts baixados
+     * */
+    private List<Info> completeList
+            ,auxiliarList;
     private AdapterListView adapterListView;
     private Button buttonSearch;
     private EditText editTextSearch;
-    private String accessToken;
+    private TextView quantityMessage;
+    private String accessToken, textSearched;
+    private int countPost;
 
     private boolean isServiceTwitterAuthBinded = false
             ,isServiceTwitterSearchBinded = false
-            ,isServiceDownloadBitmapBinded = false;
+            ,isServiceDownloadBitmapBinded = false
+            ,isServiceUpdateTwitterSearchBinded = false;
+
     private ServiceAuthTwitter serviceAuthTwitter           = null;
     private ServiceSearchTwitterAPI serviceSearchTwitterAPI = null;
     private ServiceDownloadBitmap serviceDownloadBitmap     = null;
 
-    private static final String  bindServiceTwitterAuth     = "bindServiceTwitterAuth";
-    private static final String  bindServiceTwitterSearch   = "bindServiceTwitterSearch";
-    private static final String  bindServiceDownloadBitmapBinded   = "bindServiceDownloadBitmapBinded";
+    private static final String bindServiceTwitterAuth     = "bindServiceTwitterAuth";
+    private static final String bindServiceTwitterSearch   = "bindServiceTwitterSearch";
+    private static final String bindServiceDownloadBitmapBinded = "bindServiceDownloadBitmapBinded";
+    private static final String bindServiceUpdateTwitterSearch = "bindServiceUpdateTwitterSearch";
+
+    private static final String BUNDLE_STRING_SEARCH = "BUNDLE_STRING_SEARCH";
+    private static final String BUNDLE_STRING_TOKEN = "BUNDLE_STRING_TOKEN";
+    private static final String BUNDLE_LIST_RESULT = "BUNDLE_LIST_RESULT";
 
     public static final int HANDLER_MSG_AUTH_TWITTER        = 0xf0;
     public static final int HANDLER_MSG_TWITTER_SEARCH      = 0xf1;
     public static final int HANDLER_MSG_DOWNLOAD_BITMAP     = 0xf2;
     public static final String BUNDLE_DATA_ARRAYLIST_API    = "BUNDLE_DATA_API";
+
+    private static final int LIMIT_SEARCH = 5;
 
     private Handler handlerAuthTwitter = new Handler() {
         @Override
@@ -87,8 +116,31 @@ public class MainActivity extends AppCompatActivity {
                 Bundle bundle = msg.getData();
                 if(bundle != null) {
                     ArrayList<Info> data = bundle.getParcelableArrayList(BUNDLE_DATA_ARRAYLIST_API);
-                    updateListInfo(data);
+                    if(data != null && data.size() > 0) {
+                        updateListInfo(data);
+                        doBindServiceDownloadBitmap();
+                    }
                 }
+                unBindTwitterSearchService();
+            }
+        }
+    };
+
+    private Handler handlerTwitterSearchUpdate = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            if(msg.what == HANDLER_MSG_TWITTER_SEARCH) {
+                Bundle bundle = msg.getData();
+                if(bundle != null) {
+                    ArrayList<Info> data = bundle.getParcelableArrayList(BUNDLE_DATA_ARRAYLIST_API);
+                    if(data != null && data.size() > 0) {
+                        updateListInfo(data);
+                        adapterListView.notifyDataSetChanged();
+                        doBindServiceDownloadBitmap();
+                        updateInfoSizeList();
+                    }
+                }
+                unBindServiceUpdateTwitterSearch();
             }
         }
     };
@@ -100,25 +152,79 @@ public class MainActivity extends AppCompatActivity {
                 Bundle bundle = msg.getData();
                 if(bundle != null) {
                     ArrayList<Info> data = bundle.getParcelableArrayList(BUNDLE_DATA_ARRAYLIST_API);
-                    updateListInfo(data);
+                    if(data != null || data.size() > 0) {
+                        /**
+                         * TODO
+                         * apos baixa as imagens dos ultimos N posts, adicione as imagens a
+                         * cada post
+                         * */
+                        for(Info infoRecovered : data) {
+                            byte [] buffer = infoRecovered.getImageBuffer();
+                            if(buffer != null) {
+                                Bitmap bitmap = UtilsBitmap.uncompress(buffer);
+                                infoRecovered.setImage(bitmap);
+                            }
+                            for(int i=0; i<completeList.size(); i++) {
+                                Info oldInfo = completeList.get(i);
+                                if( oldInfo.getId().equals(infoRecovered.getId()) ) {
+                                    completeList.remove(i);
+                                    completeList.add(i, infoRecovered);
+                                    break;
+                                }
+                            }
+                        }
+                        adapterListView.notifyDataSetChanged();
+                    }
                 }
-                serviceSearchTwitterAPI = null;
-                isServiceTwitterSearchBinded = false;
+                unBindDownloadBitmapService();
             }
         }
     };
 
     private void updateListInfo(List<Info> data) {
         if(data != null || data.size() > 0) {
-            Iterator<Info> it = list.iterator();
-            while (it.hasNext()) {
-                it.next();
-                it.remove();
-            }
-            list.addAll(data);
+            auxiliarList = new ArrayList<>();
+            auxiliarList.addAll(data);
+            int lastIdx = completeList.size() == 0 ? 0 : completeList.size() - 1;
+            completeList.addAll(lastIdx, auxiliarList);
+
+            Collections.sort(completeList);
+
             adapterListView.notifyDataSetChanged();
         }
+        updateInfoSizeList();
     }
+
+    public  void hiddenKeyBoard() {
+        View view = getCurrentFocus();
+        if(view != null) {
+            InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            inputMethodManager.hideSoftInputFromWindow(view.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+        }
+    }
+
+    private void updateInfoSizeList() {
+        countPost = completeList.size();
+        new Handler().post(new Runnable() {
+            @Override
+            public void run() {
+                String message = countPost == 0 ? "Nenhuma Mensagem"
+                        : String.format("%d %s", countPost, countPost > 0 ? "Mensagens" : "Mensagem");
+                quantityMessage.setText(message);
+            }
+        });
+    }
+
+    /**
+     * Ponto interessante sobre serviços vinculados
+     *
+     * Se criarmos um serviço vinculado, o desenolvedor nao precisa
+     * se preocupar com o ciclo de vida dele. O sistema operacional
+     * se encarrega de encerrar os serviços vinculados, a não ser que ele tenha
+     * sido iniciado através do metodo onStartCommand, que eh executado quando
+     * o serviso e iniciado atraves do metodo startService
+     *
+     * */
 
     private ServiceConnection connectionWithServiceTwitterAuth = new ServiceConnection() {
         @Override
@@ -142,11 +248,24 @@ public class MainActivity extends AppCompatActivity {
             serviceSearchTwitterAPI.setHandler(handlerTwitterSearch);
             serviceSearchTwitterAPI.doRequest();
         }
-
         @Override
         public void onServiceDisconnected(ComponentName name) {
             serviceSearchTwitterAPI = null;
             isServiceTwitterSearchBinded = false;
+        }
+    };
+
+    private ServiceConnection connectionWithServiceUpdateTwitterSearch = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            serviceSearchTwitterAPI = ( (ServiceSearchTwitterAPI.LocalBinder) service).getInstance();
+            serviceSearchTwitterAPI.setHandler(handlerTwitterSearchUpdate);
+            serviceSearchTwitterAPI.doRequest();
+        }
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            serviceSearchTwitterAPI = null;
+            isServiceUpdateTwitterSearchBinded = false;
         }
     };
 
@@ -157,7 +276,6 @@ public class MainActivity extends AppCompatActivity {
             serviceDownloadBitmap.setHandler(handlerDownloadBitmap);
             serviceDownloadBitmap.doRequest();
         }
-
         @Override
         public void onServiceDisconnected(ComponentName name) {
             serviceDownloadBitmap = null;
@@ -165,24 +283,61 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        list = new ArrayList<>();
+        if(savedInstanceState == null) {
+            completeList = new ArrayList<>();
+        }
+        else {
+            isServiceTwitterAuthBinded      = savedInstanceState.getBoolean(bindServiceTwitterAuth);
+            isServiceTwitterSearchBinded    = savedInstanceState.getBoolean(bindServiceTwitterSearch);
+            isServiceDownloadBitmapBinded   = savedInstanceState.getBoolean(bindServiceDownloadBitmapBinded);
+            isServiceUpdateTwitterSearchBinded = savedInstanceState.getBoolean(bindServiceUpdateTwitterSearch);
+            textSearched    = savedInstanceState.getString(BUNDLE_STRING_SEARCH);
+            accessToken     = savedInstanceState.getString(BUNDLE_STRING_TOKEN);
+            completeList    = savedInstanceState.getParcelableArrayList(BUNDLE_LIST_RESULT);
+        }
+
+        quantityMessage = (TextView) findViewById(R.id.quantity_data);
+
         int resource = android.R.layout.simple_list_item_1;
-        adapterListView = new AdapterListView(this, resource, list);
+        adapterListView = new AdapterListView(this, resource, completeList);
         listView = (ListView) findViewById(R.id.list_data);
         listView.setAdapter(adapterListView);
         listView.setOnScrollListener(new AbsListView.OnScrollListener() {
+            private int lastVisiblePosition = 0;
+            private boolean scrollUp = false;
             @Override
             public void onScrollStateChanged(AbsListView view, int scrollState) {
-                Log.i("SCROLL_STATE", String.valueOf(scrollState));
+                final ListView listView  = (ListView) view;
+                int firstVisiblePosition = listView.getFirstVisiblePosition();
+
+                /**
+                 * Quando o usuario faz o movimento para cima para deslizar a lista
+                 * isso representa um scroll down. Se o primeiro elemento que aparece na
+                 * lista for maior do que o ultimo registrado, quer dizer que o usuario
+                 * esta descendo na lista de elementos
+                 * */
+                scrollUp = firstVisiblePosition <= lastVisiblePosition;
+                //
+                //Log.i("SCROLL_STATE", String.valueOf(scrollState));
+                Log.i("SCROLL", String.format("%s First: %d Last: %d", (scrollUp ? "UP" : "DOWN")
+                        , firstVisiblePosition, lastVisiblePosition));
+                // ultimo elemento da lista dos ultimos pesquisados
+                Info lastInfo       = completeList.get(0);
+                Info firstInfo      = auxiliarList.get(auxiliarList.size() - 1);
+                String lastInfoId   = lastInfo.getId();
+                String firstInfoId  = firstInfo.getId();
                 switch (scrollState) {
                     // O usuario executou o
                     case SCROLL_STATE_FLING:
-                        doBindServiceDownloadBitmap();
+                        if(!scrollUp) {
+                            if(textSearched != null && !textSearched.equals("") && accessToken != null) {
+                                doRequest(lastInfoId, firstInfoId);
+                            }
+                        }
                         break;
                     // A view nao foi rolada
                     case SCROLL_STATE_IDLE:
@@ -190,6 +345,16 @@ public class MainActivity extends AppCompatActivity {
                     // o usuario rolou a tela e manteve o dedo na tela
                     case SCROLL_STATE_TOUCH_SCROLL:
                         break;
+                }
+                lastVisiblePosition = firstVisiblePosition;
+                /**
+                 * Se o usuario chager ao fim da lista, o listener nao sabera identificar
+                 * que o mesmo pode fazer um movimento da tela
+                 * */
+                if(lastVisiblePosition == completeList.size() - 2) {
+                    if(textSearched != null && !textSearched.equals("") && accessToken != null) {
+                        doRequest(lastInfoId, firstInfoId);
+                    }
                 }
             }
             @Override
@@ -202,6 +367,26 @@ public class MainActivity extends AppCompatActivity {
         buttonSearch    = (Button) findViewById(R.id.button_search);
     }
 
+    private void doRequest(String lastInfoId, String maxId) {
+        // max_id = ultimo id processado na timeline do twitter
+        // since_id
+        String url = Uri.parse(
+            String.format(
+                //"https://api.twitter.com/1.1/search/tweets.json?q=%s&lang=%s&count=%d&since_id=%s&max_id=%s"
+                "https://api.twitter.com/1.1/search/tweets.json?q=%s&lang=%s&count=%d&max_id=%s"
+                ,textSearched
+                ,"pt"
+                ,LIMIT_SEARCH
+                //,lastInfoId
+                ,maxId
+            )
+        ).toString();
+        url = url.replaceAll("\\s", "%20");
+        if(!isServiceUpdateTwitterSearchBinded) {
+            doBindServiceTwitterSearch(connectionWithServiceUpdateTwitterSearch, textSearched, url);
+            isServiceUpdateTwitterSearchBinded = true;
+        }
+    }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
@@ -209,7 +394,13 @@ public class MainActivity extends AppCompatActivity {
         if(outState != null) {
             outState.putBoolean(bindServiceTwitterAuth, isServiceTwitterAuthBinded);
             outState.putBoolean(bindServiceTwitterSearch, isServiceTwitterSearchBinded);
+            outState.putBoolean(bindServiceUpdateTwitterSearch, isServiceUpdateTwitterSearchBinded);
+
             outState.putBoolean(bindServiceDownloadBitmapBinded, isServiceDownloadBitmapBinded);
+            outState.putString(textSearched, BUNDLE_STRING_SEARCH);
+            outState.putString(accessToken, BUNDLE_STRING_TOKEN);
+
+            outState.putParcelableArrayList(BUNDLE_LIST_RESULT, (ArrayList<? extends Parcelable>) completeList);
         }
     }
 
@@ -217,17 +408,26 @@ public class MainActivity extends AppCompatActivity {
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         if(savedInstanceState != null) {
-            isServiceTwitterAuthBinded = savedInstanceState.getBoolean(bindServiceTwitterAuth);
-            isServiceTwitterSearchBinded = savedInstanceState.getBoolean(bindServiceTwitterSearch);
-            isServiceDownloadBitmapBinded = savedInstanceState.getBoolean(bindServiceDownloadBitmapBinded);
+            isServiceTwitterAuthBinded      = savedInstanceState.getBoolean(bindServiceTwitterAuth);
+            isServiceTwitterSearchBinded    = savedInstanceState.getBoolean(bindServiceTwitterSearch);
+            isServiceUpdateTwitterSearchBinded = savedInstanceState.getBoolean(bindServiceUpdateTwitterSearch);
+            isServiceDownloadBitmapBinded   = savedInstanceState.getBoolean(bindServiceDownloadBitmapBinded);
+            textSearched = savedInstanceState.getString(BUNDLE_STRING_SEARCH);
+            accessToken = savedInstanceState.getString(BUNDLE_STRING_TOKEN);
+            completeList = savedInstanceState.getParcelableArrayList(BUNDLE_LIST_RESULT);
         }
     }
 
     public void search(View view) {
-        String text = editTextSearch.getText().toString();
-        if(!text.equals("") && accessToken != null) {
-            doBindServiceTwitterSearch(text);
+        textSearched = editTextSearch.getText().toString();
+        if(!textSearched.equals("") && accessToken != null && ! isServiceTwitterSearchBinded) {
+            String url = Uri.parse(String.format("https://api.twitter.com/1.1/" +
+                    "search/tweets.json?q=%s&lang=%s&count=%d", textSearched, "pt", LIMIT_SEARCH)).toString();
+            url = url.replaceAll("\\s", "%20");
+            doBindServiceTwitterSearch(connectionWithServiceTwitterSearch, textSearched, url);
+            isServiceTwitterSearchBinded = true;
         }
+        hiddenKeyBoard();
     }
 
     private void doBindServiceTwitterAuth() {
@@ -238,40 +438,60 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void doBindServiceTwitterSearch(String text) {
-        if(!isServiceTwitterSearchBinded) {
-            Intent intent = new Intent(getApplicationContext(), ServiceSearchTwitterAPI.class);
-            Bundle bundle = new Bundle();
-            bundle.putString(ServiceSearchTwitterAPI.TEXT_SEARCH, text);
-            bundle.putString(ServiceSearchTwitterAPI.TOKEN_AUTHORIZATION, accessToken);
-            String url = Uri.parse(String.format("https://api.twitter.com/1.1/search/tweets.json?q=%s&lang=%s&count=%d", text, "pt", 3)).toString();
-            bundle.putString(ServiceSearchTwitterAPI.URL, url);
-            intent.putExtras(bundle);
-            bindService(intent, connectionWithServiceTwitterSearch, Context.BIND_AUTO_CREATE);
-            isServiceTwitterSearchBinded = true;
-        }
+    private void doBindServiceTwitterSearch(ServiceConnection serviceConnection, String text, String url) {
+        Intent intent = new Intent(getApplicationContext(), ServiceSearchTwitterAPI.class);
+        Bundle bundle = new Bundle();
+        bundle.putString(ServiceSearchTwitterAPI.TEXT_SEARCH, text);
+        bundle.putString(ServiceSearchTwitterAPI.TOKEN_AUTHORIZATION, accessToken);
+        bundle.putString(ServiceSearchTwitterAPI.URL, url);
+        intent.putExtras(bundle);
+        bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
     }
 
+    /**
+     *  E/JavaBinder: !!! FAILED BINDER TRANSACTION !!!  (parcel size = 3418456)
+     *  Erro relacionado ao tamanho da imagem. Programadores sugerem utilizar LruCache
+     *  para fazer cache de imagens
+     * */
     private void doBindServiceDownloadBitmap() {
-        if(!isServiceDownloadBitmapBinded && list.size() > 0) {
+        if(!isServiceDownloadBitmapBinded && completeList.size() > 0) {
             Intent intent = new Intent(getApplicationContext(), ServiceDownloadBitmap.class);
             Bundle bundle = new Bundle();
-            bundle.putParcelableArrayList(ServiceDownloadBitmap.BUNDLE_INFO_LIST, (ArrayList<? extends Parcelable>) list);
+            bundle.putParcelableArrayList(ServiceDownloadBitmap.BUNDLE_INFO_LIST, (ArrayList<? extends Parcelable>) auxiliarList);
             intent.putExtras(bundle);
             bindService(intent, connectionWithDownloadBitmap,  Context.BIND_AUTO_CREATE);
             isServiceDownloadBitmapBinded = true;
         }
     }
 
-    private void doUnbindService() {
+    private void doUnbindServices() {
+        unBindTwitterAuthService();
+        unBindTwitterSearchService();
+        unBindDownloadBitmapService();
+    }
+
+    private void unBindTwitterAuthService() {
         if(isServiceTwitterAuthBinded) {
             unbindService(connectionWithServiceTwitterAuth);
             isServiceTwitterAuthBinded = false;
         }
+    }
+
+    private void unBindTwitterSearchService() {
         if(isServiceTwitterSearchBinded) {
             unbindService(connectionWithServiceTwitterSearch);
             isServiceTwitterSearchBinded = false;
         }
+    }
+
+    private void unBindServiceUpdateTwitterSearch() {
+        if(isServiceUpdateTwitterSearchBinded) {
+            unbindService(connectionWithServiceUpdateTwitterSearch);
+            isServiceUpdateTwitterSearchBinded = false;
+        }
+    }
+
+    private void unBindDownloadBitmapService() {
         if(isServiceDownloadBitmapBinded) {
             unbindService(connectionWithDownloadBitmap);
             isServiceDownloadBitmapBinded = false;
@@ -281,6 +501,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        doUnbindService();
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        doUnbindServices();
     }
 }

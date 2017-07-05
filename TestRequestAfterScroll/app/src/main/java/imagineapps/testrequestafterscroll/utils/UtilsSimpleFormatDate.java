@@ -1,4 +1,4 @@
-package imagineapps.testrequestafterscroll;
+package imagineapps.testrequestafterscroll.utils;
 
 import android.util.Log;
 
@@ -26,8 +26,11 @@ public class UtilsSimpleFormatDate {
         return -1;
     }
 
+    public static final String DEFAUL_BR_FORMAT_DATE = "dd-MM-yyyy hh:mm:ss";
+    public static final String DEFAULT_UTC_FORMAT_DATE = "EEE MMM d, yyyy HH:mm:ss";
+
     public static String convertLongToDateFormat(long date) {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy hh:mm:ss");
+        SimpleDateFormat dateFormat = new SimpleDateFormat(DEFAUL_BR_FORMAT_DATE);
         String fmt = dateFormat.format(new Date(date));
         return fmt;
     }

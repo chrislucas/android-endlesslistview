@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import imagineapps.testrequestafterscroll.MainActivity;
-import imagineapps.testrequestafterscroll.UtilsSimpleFormatDate;
+import imagineapps.testrequestafterscroll.utils.UtilsSimpleFormatDate;
 import imagineapps.testrequestafterscroll.entitiy.Info;
 import imagineapps.uptolv.utils.http.ModelHTTPRequest;
 
@@ -83,14 +83,14 @@ public class SearchTwitterAPI extends ModelHTTPRequest {
                         JSONObject tweetInfo = jsonArray.getJSONObject(i);
                         Info info = new Info();
                         String id = tweetInfo.getString("id");
+                        info.setId(id);
                         info.setText(tweetInfo.getString("text"));
                         String createAt = tweetInfo.getString("created_at");
                         long time       = UtilsSimpleFormatDate.convertUTCToMilliseconds(createAt, "EEE MMM d HH:mm:ss Z yyyy");
-                        String dateFmt  = UtilsSimpleFormatDate.convertLongToDateFormat(time);
                         info.setDate(time);
-                        //info.setTitle(tweetInfo.getString("source"));
+                        //String dateFmt  = UtilsSimpleFormatDate.convertLongToDateFormat(time);
                         JSONObject jsonUser         = tweetInfo.getJSONObject("user");
-                        String urlImageUser         = jsonUser.getString("profile_image_url");
+                        //String urlImageUser       = jsonUser.getString("profile_image_url");
                         String urlImageBackground   = jsonUser.getString("profile_background_image_url");
                         String userName             = jsonUser.getString("name");
                         info.setTitle(userName);
@@ -99,7 +99,6 @@ public class SearchTwitterAPI extends ModelHTTPRequest {
                     }
                 }
             }
-            else {}
         } catch (Exception e) {
             Log.e("EXCP_SEARCH_TWITTER", e.getMessage());
         }

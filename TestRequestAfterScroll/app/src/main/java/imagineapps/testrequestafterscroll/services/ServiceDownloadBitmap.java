@@ -10,7 +10,7 @@ import android.os.IBinder;
 import java.util.List;
 
 import imagineapps.testrequestafterscroll.entitiy.Info;
-import imagineapps.testrequestafterscroll.http.DownloadBitmap;
+import imagineapps.testrequestafterscroll.http.BgDownloadBitmap;
 import imagineapps.uptolv.action.DoAsyncTasks;
 
 public class ServiceDownloadBitmap extends Service {
@@ -32,13 +32,28 @@ public class ServiceDownloadBitmap extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
+        initialize(intent);
+        return iBinder;
+    }
+
+    @Override
+    public void onRebind(Intent intent) {
+        initialize(intent);
+        super.onRebind(intent);
+    }
+
+    @Override
+    public boolean onUnbind(Intent intent) {
+        return super.onUnbind(intent);
+    }
+
+    private void initialize(Intent intent) {
         if(intent != null) {
             Bundle bundle = intent.getExtras();
             if(bundle != null) {
                 infoList = bundle.getParcelableArrayList(BUNDLE_INFO_LIST);
             }
         }
-        return iBinder;
     }
 
     public class LocalBinder extends Binder {
@@ -51,7 +66,6 @@ public class ServiceDownloadBitmap extends Service {
     public void onCreate() {
         super.onCreate();
     }
-
 
     public static final String BUNDLE_INFO_LIST = "BUNDLE_INFO_LIST";
 
@@ -67,8 +81,8 @@ public class ServiceDownloadBitmap extends Service {
     }
 
     public void doRequest() {
-        DownloadBitmap downloadBitmap = new DownloadBitmap(infoList, handler);
-        DoAsyncTasks doAsyncTasks     = new DoAsyncTasks(downloadBitmap);
+        BgDownloadBitmap bgDownloadBitmap = new BgDownloadBitmap(infoList, handler);
+        DoAsyncTasks doAsyncTasks     = new DoAsyncTasks(bgDownloadBitmap);
         doAsyncTasks.execute();
     }
 

@@ -1,0 +1,10 @@
+https://stackoverflow.com/questions/31131640/android-java-binder-failed-binder-transaction
+https://developer.android.com/topic/performance/graphics/cache-bitmap.html
+
+resultado ao pesquisar sobre: E/JavaBinder: !!! FAILED BINDER TRANSACTION !!!
+https://stackoverflow.com/questions/3528735/failed-binder-transaction-when-putting-an-bitmap-dynamically-in-a-widget
+https://stackoverflow.com/questions/23407821/how-to-solve-error-failed-binder-transaction-in-android-4-4
+
+Failed binder transaction when putting an bitmap dynamically in a widget
+https://stackoverflow.com/questions/3528735/failed-binder-transaction-when-putting-an-bitmap-dynamically-in-a-widget
+https://developer.android.com/reference/android/os/TransactionTooLargeException.html

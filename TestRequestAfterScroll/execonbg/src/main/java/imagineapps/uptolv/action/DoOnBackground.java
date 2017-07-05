@@ -9,6 +9,6 @@ import java.util.List;
  */
 
 public interface DoOnBackground {
-    public List<Parcelable> execute();
+    public List<? extends Parcelable> execute();
     public void afterExecution(List<Parcelable> data);
 }

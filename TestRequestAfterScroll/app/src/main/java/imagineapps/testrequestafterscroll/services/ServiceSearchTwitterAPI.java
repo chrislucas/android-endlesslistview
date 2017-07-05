@@ -71,6 +71,17 @@ public class ServiceSearchTwitterAPI extends Service /*IntentService*/ {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
+        initialize(intent);
+        return iBinder;
+    }
+
+    @Override
+    public void onRebind(Intent intent) {
+        initialize(intent);
+        super.onRebind(intent);
+    }
+
+    private void initialize(Intent intent) {
         if (intent != null) {
             Bundle bundle   = intent.getExtras();
             if(bundle != null) {
@@ -79,7 +90,11 @@ public class ServiceSearchTwitterAPI extends Service /*IntentService*/ {
                 url             = bundle.getString(URL);
             }
         }
-        return iBinder;
+    }
+
+    @Override
+    public boolean onUnbind(Intent intent) {
+        return super.onUnbind(intent);
     }
 
     /**
