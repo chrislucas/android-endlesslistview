@@ -68,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
             ,isServiceDownloadBitmapBinded = false
             ,isServiceUpdateTwitterSearchBinded = false;
 
-    private ServiceAuthTwitter serviceAuthTwitter           = null;
+    private ServiceAuthTwitter serviceAuthTwitter    = null;
     private ServiceSearchTwitterAPI serviceSearchTwitterAPI = null;
     private ServiceDownloadBitmap serviceDownloadBitmap     = null;
 
@@ -228,86 +228,93 @@ public class MainActivity extends AppCompatActivity {
      *
      * */
 
-    private Messenger messenger;
+    private ServiceConnection connectionWithServiceTwitterAuth = null;
+    private void initializeConnectionServiceTwitterAuth() {
+        if(connectionWithServiceTwitterAuth == null) {
+            connectionWithServiceTwitterAuth = new ServiceConnection() {
+                @Override
+                public void onServiceConnected(ComponentName name, IBinder service) {
+                    serviceAuthTwitter = ((ServiceAuthTwitter.LocalBinder) service).getInstance();
+                    serviceAuthTwitter.setHandler(handlerAuthTwitter);
+                    serviceAuthTwitter.doRequest();
+                }
+                /**
+                 * Called when a connection to the Service has been lost. This typically happens
+                 * when the process hosting the service has crashed or been killed.
+                 * This does not remove the ServiceConnection itself
+                 * -- this binding to the service will remain active, and you will receive a call to
+                 * */
+                @Override
+                public void onServiceDisconnected(ComponentName name) {
+                    serviceAuthTwitter = null;
+                    isServiceTwitterAuthBinded = false;
+                    Log.v("SERVICE_DISCONNECTION", "TWITTER_AUTH");
+                }
+            };
+        }
+    }
 
-    private ServiceConnection connectionWithServiceTwitterAuth = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            /*
-            messenger = new Messenger(service);
-            Message message = Message.obtain(null,  ServiceAuthTwitter.MESSAGE_SERVICE);
-            try {
-                messenger.send(message);
-                unBindTwitterAuthService();
-            } catch (RemoteException e) {
-                Log.e("REMOTE_EXCEPTION", e.getMessage());
-            }
-            */
+    private ServiceConnection connectionWithServiceTwitterSearch = null;
+    private void initConnectionWithServiceTwitterSearch() {
+        if(connectionWithServiceTwitterSearch == null) {
+            connectionWithServiceTwitterSearch = new ServiceConnection() {
+                @Override
+                public void onServiceConnected(ComponentName name, IBinder service) {
+                    serviceSearchTwitterAPI = ( (ServiceSearchTwitterAPI.LocalBinder) service).getInstance();
+                    serviceSearchTwitterAPI.setHandler(handlerTwitterSearch);
+                    serviceSearchTwitterAPI.doRequest();
+                }
+                @Override
+                public void onServiceDisconnected(ComponentName name) {
+                    serviceSearchTwitterAPI = null;
+                    isServiceTwitterSearchBinded = false;
+                    Log.v("SERVICE_DISCONNECTION", "TWITTER_SEARCH");
+                }
+            };
+        }
+    }
 
-            serviceAuthTwitter = ((ServiceAuthTwitter.LocalBinder) service).getInstance();
-            serviceAuthTwitter.setHandler(handlerAuthTwitter);
-            serviceAuthTwitter.doRequest();
+    private ServiceConnection connectionWithServiceUpdateTwitterSearch = null;
+    private void initConnectionWithServiceUpdateTwitterSearch() {
+        if(connectionWithServiceUpdateTwitterSearch == null) {
+            connectionWithServiceUpdateTwitterSearch = new ServiceConnection() {
+                @Override
+                public void onServiceConnected(ComponentName name, IBinder service) {
+                    serviceSearchTwitterAPI = ( (ServiceSearchTwitterAPI.LocalBinder) service).getInstance();
+                    serviceSearchTwitterAPI.setHandler(handlerTwitterSearchUpdate);
+                    serviceSearchTwitterAPI.doRequest();
+                }
+                @Override
+                public void onServiceDisconnected(ComponentName name) {
+                    serviceSearchTwitterAPI = null;
+                    isServiceUpdateTwitterSearchBinded = false;
+                    Log.v("SERVICE_DISCONNECTION", "UPDATE_TWITTER_SEARCH");
+                }
+            };
+        }
+    }
 
-        }
-        /**
-         * Called when a connection to the Service has been lost. This typically happens
-         * when the process hosting the service has crashed or been killed.
-         * This does not remove the ServiceConnection itself
-         * -- this binding to the service will remain active, and you will receive a call to
-         * */
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            serviceAuthTwitter = null;
-            isServiceTwitterAuthBinded = false;
-            Log.v("SERVICE_DISCONNECTION", "TWITTER_AUTH");
-        }
-    };
+    private ServiceConnection connectionWithDownloadBitmap = null;
+    public void initializeConnectionWithDownloadBitmap() {
+        if(connectionWithDownloadBitmap == null) {
+            connectionWithDownloadBitmap = new ServiceConnection() {
+                @Override
+                public void onServiceConnected(ComponentName name, IBinder service) {
+                    serviceDownloadBitmap = ( (ServiceDownloadBitmap.LocalBinder) service).getInstance();
+                    serviceDownloadBitmap.setHandler(handlerDownloadBitmap);
+                    serviceDownloadBitmap.doRequest();
+                }
 
-    private ServiceConnection connectionWithServiceTwitterSearch = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            serviceSearchTwitterAPI = ( (ServiceSearchTwitterAPI.LocalBinder) service).getInstance();
-            serviceSearchTwitterAPI.setHandler(handlerTwitterSearch);
-            serviceSearchTwitterAPI.doRequest();
+                @Override
+                public void onServiceDisconnected(ComponentName name) {
+                    serviceDownloadBitmap = null;
+                    isServiceDownloadBitmapBinded = false;
+                    Log.v("SERVICE_DISCONNECTION", "DOWNLOAD_BITMAP");
+                }
+            };
         }
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            serviceSearchTwitterAPI = null;
-            isServiceTwitterSearchBinded = false;
-            Log.v("SERVICE_DISCONNECTION", "TWITTER_SEARCH");
-        }
-    };
+    }
 
-    private ServiceConnection connectionWithServiceUpdateTwitterSearch = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            serviceSearchTwitterAPI = ( (ServiceSearchTwitterAPI.LocalBinder) service).getInstance();
-            serviceSearchTwitterAPI.setHandler(handlerTwitterSearchUpdate);
-            serviceSearchTwitterAPI.doRequest();
-        }
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            serviceSearchTwitterAPI = null;
-            isServiceUpdateTwitterSearchBinded = false;
-            Log.v("SERVICE_DISCONNECTION", "UPDATE_TWITTER_SEARCH");
-        }
-    };
-
-    private ServiceConnection connectionWithDownloadBitmap = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            serviceDownloadBitmap = ( (ServiceDownloadBitmap.LocalBinder) service).getInstance();
-            serviceDownloadBitmap.setHandler(handlerDownloadBitmap);
-            serviceDownloadBitmap.doRequest();
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            serviceDownloadBitmap = null;
-            isServiceDownloadBitmapBinded = false;
-            Log.v("SERVICE_DISCONNECTION", "DOWNLOAD_BITMAP");
-        }
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -415,6 +422,7 @@ public class MainActivity extends AppCompatActivity {
         ).toString();
         url = url.replaceAll("\\s", "%20");
         if(!isServiceUpdateTwitterSearchBinded) {
+            initConnectionWithServiceUpdateTwitterSearch();
             isServiceUpdateTwitterSearchBinded = doBindServiceTwitterSearch(connectionWithServiceUpdateTwitterSearch, textSearched, url);
         }
     }
@@ -457,6 +465,7 @@ public class MainActivity extends AppCompatActivity {
             String url = Uri.parse(String.format("https://api.twitter.com/1.1/" +
                     "search/tweets.json?q=%s&lang=%s&count=%d", textSearched, "pt", LIMIT_SEARCH)).toString();
             url = url.replaceAll("\\s", "%20");
+            initConnectionWithServiceTwitterSearch();
             isServiceTwitterSearchBinded = doBindServiceTwitterSearch(connectionWithServiceTwitterSearch, textSearched, url);
         }
         hiddenKeyBoard();
@@ -464,6 +473,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void doBindServiceTwitterAuth() {
         if(!isServiceTwitterAuthBinded) {
+            initializeConnectionServiceTwitterAuth();
             Intent intent = new Intent(this, ServiceAuthTwitter.class);
             isServiceTwitterAuthBinded = bindService(intent, connectionWithServiceTwitterAuth, Context.BIND_AUTO_CREATE);
         }
@@ -486,6 +496,7 @@ public class MainActivity extends AppCompatActivity {
      * */
     private void doBindServiceDownloadBitmap() {
         if(!isServiceDownloadBitmapBinded && completeList.size() > 0) {
+            initializeConnectionWithDownloadBitmap();
             Intent intent = new Intent(getApplicationContext(), ServiceDownloadBitmap.class);
             Bundle bundle = new Bundle();
             bundle.putParcelableArrayList(ServiceDownloadBitmap.BUNDLE_INFO_LIST, (ArrayList<? extends Parcelable>) auxiliarList);
@@ -539,12 +550,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
+        doUnbindServices();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        doUnbindServices();
     }
 
     @Override

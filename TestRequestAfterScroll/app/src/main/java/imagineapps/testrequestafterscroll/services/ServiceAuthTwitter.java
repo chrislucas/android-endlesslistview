@@ -22,7 +22,7 @@ public class ServiceAuthTwitter extends Service {
 
     private Handler handler;
     private final IBinder iBinder = new LocalBinder();
-    private final Messenger messanger = new Messenger(new LocalMessage(this));
+    //private final Messenger messanger = new Messenger(new LocalMessage(this));
 
     public Handler getHandler() {
         return handler;
@@ -37,16 +37,15 @@ public class ServiceAuthTwitter extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d("SERVICE_T_AUTH", "ONCREATE");
+        Log.i("SERVICE_TWITTER_AUTH", "ONCREATE");
     }
 
 
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        Log.d("SERVICE_T_AUTH", "ONBIND");
+        Log.i("SERVICE_TWITTER_AUTH", "ONBIND");
         return iBinder;
-        //return messanger.getBinder();
     }
 
     @Override
@@ -63,9 +62,7 @@ public class ServiceAuthTwitter extends Service {
         doAsyncTasks.execute();
     }
 
-
-
-    public class LocalBinder extends Binder  {
+    public  class LocalBinder extends Binder  {
         public ServiceAuthTwitter getInstance() {
             return ServiceAuthTwitter.this;
         }
@@ -73,7 +70,7 @@ public class ServiceAuthTwitter extends Service {
 
     public static final int MESSAGE_SERVICE = 0;
 
-    public class LocalMessage extends Handler {
+    public  class LocalMessage extends Handler {
         private final WeakReference<ServiceAuthTwitter> mReference;
 
         public LocalMessage(ServiceAuthTwitter mReference) {
@@ -83,9 +80,7 @@ public class ServiceAuthTwitter extends Service {
         @Override
         public void handleMessage(Message msg) {
             ServiceAuthTwitter service = mReference.get();
-            if(msg.what == MESSAGE_SERVICE) {
-
-            }
+            if(msg.what == MESSAGE_SERVICE) {}
             super.handleMessage(msg);
         }
     }
