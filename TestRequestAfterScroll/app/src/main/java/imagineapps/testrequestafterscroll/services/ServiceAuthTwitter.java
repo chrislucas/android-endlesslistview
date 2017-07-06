@@ -5,8 +5,12 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,17 +18,11 @@ import imagineapps.testrequestafterscroll.http.RequestAuthTwitterAPI;
 import imagineapps.uptolv.action.DoOnBackground;
 import imagineapps.uptolv.action.DoAsyncTasks;
 
-
-/**
- * Ciclo
- * onCreate
- * onBind
- * */
-
 public class ServiceAuthTwitter extends Service {
 
     private Handler handler;
     private final IBinder iBinder = new LocalBinder();
+    private final Messenger messanger = new Messenger(new LocalMessage(this));
 
     public Handler getHandler() {
         return handler;
@@ -39,15 +37,18 @@ public class ServiceAuthTwitter extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        Log.d("SERVICE_T_AUTH", "ONCREATE");
     }
 
-    /**
-     *
-     * @param intent
-     * @param flags
-     * @param startId
-     * @see Service#onStartCommand
-     */
+
+    @Nullable
+    @Override
+    public IBinder onBind(Intent intent) {
+        Log.d("SERVICE_T_AUTH", "ONBIND");
+        return iBinder;
+        //return messanger.getBinder();
+    }
+
     @Override
     public int onStartCommand(@Nullable Intent intent, int flags, int startId) {
         return START_NOT_STICKY;
@@ -62,22 +63,35 @@ public class ServiceAuthTwitter extends Service {
         doAsyncTasks.execute();
     }
 
-    @Nullable
-    @Override
-    public IBinder onBind(Intent intent) {
-        return iBinder;
-    }
 
-    public class LocalBinder extends Binder {
+
+    public class LocalBinder extends Binder  {
         public ServiceAuthTwitter getInstance() {
             return ServiceAuthTwitter.this;
+        }
+    }
+
+    public static final int MESSAGE_SERVICE = 0;
+
+    public class LocalMessage extends Handler {
+        private final WeakReference<ServiceAuthTwitter> mReference;
+
+        public LocalMessage(ServiceAuthTwitter mReference) {
+            this.mReference = new WeakReference<ServiceAuthTwitter>(mReference);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            ServiceAuthTwitter service = mReference.get();
+            if(msg.what == MESSAGE_SERVICE) {
+
+            }
+            super.handleMessage(msg);
         }
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if(handler != null)
-            handler = null;
     }
 }

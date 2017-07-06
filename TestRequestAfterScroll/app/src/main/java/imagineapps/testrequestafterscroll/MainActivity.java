@@ -10,7 +10,9 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.os.Messenger;
 import android.os.Parcelable;
+import android.os.RemoteException;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -26,7 +28,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -107,6 +108,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                 }
+                unBindTwitterAuthService();
             }
         }
     };
@@ -226,18 +228,38 @@ public class MainActivity extends AppCompatActivity {
      *
      * */
 
+    private Messenger messenger;
+
     private ServiceConnection connectionWithServiceTwitterAuth = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
+            /*
+            messenger = new Messenger(service);
+            Message message = Message.obtain(null,  ServiceAuthTwitter.MESSAGE_SERVICE);
+            try {
+                messenger.send(message);
+                unBindTwitterAuthService();
+            } catch (RemoteException e) {
+                Log.e("REMOTE_EXCEPTION", e.getMessage());
+            }
+            */
+
             serviceAuthTwitter = ((ServiceAuthTwitter.LocalBinder) service).getInstance();
             serviceAuthTwitter.setHandler(handlerAuthTwitter);
             serviceAuthTwitter.doRequest();
-        }
 
+        }
+        /**
+         * Called when a connection to the Service has been lost. This typically happens
+         * when the process hosting the service has crashed or been killed.
+         * This does not remove the ServiceConnection itself
+         * -- this binding to the service will remain active, and you will receive a call to
+         * */
         @Override
         public void onServiceDisconnected(ComponentName name) {
             serviceAuthTwitter = null;
             isServiceTwitterAuthBinded = false;
+            Log.v("SERVICE_DISCONNECTION", "TWITTER_AUTH");
         }
     };
 
@@ -252,6 +274,7 @@ public class MainActivity extends AppCompatActivity {
         public void onServiceDisconnected(ComponentName name) {
             serviceSearchTwitterAPI = null;
             isServiceTwitterSearchBinded = false;
+            Log.v("SERVICE_DISCONNECTION", "TWITTER_SEARCH");
         }
     };
 
@@ -266,6 +289,7 @@ public class MainActivity extends AppCompatActivity {
         public void onServiceDisconnected(ComponentName name) {
             serviceSearchTwitterAPI = null;
             isServiceUpdateTwitterSearchBinded = false;
+            Log.v("SERVICE_DISCONNECTION", "UPDATE_TWITTER_SEARCH");
         }
     };
 
@@ -276,10 +300,12 @@ public class MainActivity extends AppCompatActivity {
             serviceDownloadBitmap.setHandler(handlerDownloadBitmap);
             serviceDownloadBitmap.doRequest();
         }
+
         @Override
         public void onServiceDisconnected(ComponentName name) {
             serviceDownloadBitmap = null;
             isServiceDownloadBitmapBinded = false;
+            Log.v("SERVICE_DISCONNECTION", "DOWNLOAD_BITMAP");
         }
     };
 
@@ -301,9 +327,7 @@ public class MainActivity extends AppCompatActivity {
             countPost       = savedInstanceState.getInt(BUNDLE_QUANTITY_POST);
             updateInfoSizeList();
         }
-
         quantityMessage = (TextView) findViewById(R.id.quantity_data);
-
         int resource = android.R.layout.simple_list_item_1;
         adapterListView = new AdapterListView(this, resource, completeList);
         listView = (ListView) findViewById(R.id.list_data);
@@ -343,7 +367,7 @@ public class MainActivity extends AppCompatActivity {
                         if(!scrollUp && (qPosts - lastVisiblePosition) < 5) {
                             Log.i("UPDATE_POST", "DOWNLOAD_POSTS");
                             if(textSearched != null && !textSearched.equals("") && accessToken != null) {
-                                doRequest(lastInfoId, firstInfoId);
+                                requestNewInformation(lastInfoId, firstInfoId);
                             }
                         }
                         break;
@@ -362,7 +386,7 @@ public class MainActivity extends AppCompatActivity {
                 if((qPosts - lastVisiblePosition) < 5) {
                     Log.i("UPDATE_POST", "FIM DA LISTA. DOWNLOAD_POSTS");
                     if(textSearched != null && !textSearched.equals("") && accessToken != null) {
-                        doRequest(lastInfoId, firstInfoId);
+                        requestNewInformation(lastInfoId, firstInfoId);
                     }
                 }
             }
@@ -371,12 +395,11 @@ public class MainActivity extends AppCompatActivity {
                     , int visibleItemCount, int totalItemCount) {
             }
         });
-        doBindServiceTwitterAuth();
         editTextSearch  = (EditText) findViewById(R.id.edittext_search);
         buttonSearch    = (Button) findViewById(R.id.button_search);
     }
 
-    private void doRequest(String lastInfoId, String maxId) {
+    private void requestNewInformation(String lastInfoId, String maxId) {
         // max_id = ultimo id processado na timeline do twitter
         // since_id
         String url = Uri.parse(
@@ -416,10 +439,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         if(savedInstanceState != null) {
-            isServiceTwitterAuthBinded      = savedInstanceState.getBoolean(bindServiceTwitterAuth);
-            isServiceTwitterSearchBinded    = savedInstanceState.getBoolean(bindServiceTwitterSearch);
-            isServiceUpdateTwitterSearchBinded = savedInstanceState.getBoolean(bindServiceUpdateTwitterSearch);
-            isServiceDownloadBitmapBinded   = savedInstanceState.getBoolean(bindServiceDownloadBitmapBinded);
+            isServiceTwitterAuthBinded          = savedInstanceState.getBoolean(bindServiceTwitterAuth);
+            isServiceTwitterSearchBinded        = savedInstanceState.getBoolean(bindServiceTwitterSearch);
+            isServiceUpdateTwitterSearchBinded  = savedInstanceState.getBoolean(bindServiceUpdateTwitterSearch);
+            isServiceDownloadBitmapBinded       = savedInstanceState.getBoolean(bindServiceDownloadBitmapBinded);
             textSearched = savedInstanceState.getString(BUNDLE_STRING_SEARCH);
             accessToken  = savedInstanceState.getString(BUNDLE_STRING_TOKEN);
             completeList = savedInstanceState.getParcelableArrayList(BUNDLE_LIST_RESULT);
@@ -430,7 +453,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void search(View view) {
         textSearched = editTextSearch.getText().toString();
-        if(!textSearched.equals("") && accessToken != null && ! isServiceTwitterSearchBinded) {
+        if(!textSearched.equals("") && accessToken != null /* && ! isServiceTwitterSearchBinded */) {
             String url = Uri.parse(String.format("https://api.twitter.com/1.1/" +
                     "search/tweets.json?q=%s&lang=%s&count=%d", textSearched, "pt", LIMIT_SEARCH)).toString();
             url = url.replaceAll("\\s", "%20");
@@ -474,12 +497,14 @@ public class MainActivity extends AppCompatActivity {
     private void doUnbindServices() {
         unBindTwitterAuthService();
         unBindTwitterSearchService();
+        unBindServiceUpdateTwitterSearch();
         unBindDownloadBitmapService();
     }
 
     private void unBindTwitterAuthService() {
         if(isServiceTwitterAuthBinded) {
             unbindService(connectionWithServiceTwitterAuth);
+            connectionWithServiceTwitterAuth = null;
             isServiceTwitterAuthBinded = false;
         }
     }
@@ -506,8 +531,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        doBindServiceTwitterAuth();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
+        doUnbindServices();
     }
 
     @Override

@@ -77,8 +77,8 @@ public class ServiceSearchTwitterAPI extends Service /*IntentService*/ {
 
     @Override
     public void onRebind(Intent intent) {
-        initialize(intent);
         super.onRebind(intent);
+        initialize(intent);
     }
 
     private void initialize(Intent intent) {
@@ -127,10 +127,5 @@ public class ServiceSearchTwitterAPI extends Service /*IntentService*/ {
         SearchTwitterAPI httpRequest = new SearchTwitterAPI(url, authorization, handler);
         DoAsyncTasks doAsyncTasks    = new DoAsyncTasks(httpRequest);
         doAsyncTasks.execute();
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
     }
 }
