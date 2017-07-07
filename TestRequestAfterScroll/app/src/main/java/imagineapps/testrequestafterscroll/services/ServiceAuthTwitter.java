@@ -85,7 +85,7 @@ public class ServiceAuthTwitter extends Service {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
-            //ServiceAuthTwitter service = mReference.get();
+            //ServiceAuthTwitter service = mReference.buildDefault();
             if(msg.what == MESSAGE_SERVICE) {
                 doRequest();
             }

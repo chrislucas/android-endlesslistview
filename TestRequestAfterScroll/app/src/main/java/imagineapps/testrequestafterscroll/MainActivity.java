@@ -37,6 +37,7 @@ import imagineapps.testrequestafterscroll.services.connection.ConnectionWithDown
 import imagineapps.testrequestafterscroll.services.connection.ConnectionWithServiceTwitterAuth;
 import imagineapps.testrequestafterscroll.services.connection.ConnectionWithServiceTwitterSearch;
 import imagineapps.testrequestafterscroll.services.connection.ConnectionWithServiceUpdateTwitterSearch;
+import imagineapps.testrequestafterscroll.utils.BuildProgressDialog;
 import imagineapps.testrequestafterscroll.utils.UtilsBitmap;
 
 public class MainActivity extends AppCompatActivity {
@@ -90,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String BUNDLE_DATA_ARRAYLIST_API    = "BUNDLE_DATA_API";
 
     private static final int LIMIT_SEARCH = 7;
+    private BuildProgressDialog pDialogSearch;
 
     private Handler handlerAuthTwitter = new Handler() {
         @Override
@@ -342,6 +344,7 @@ public class MainActivity extends AppCompatActivity {
         });
         editTextSearch  = (EditText) findViewById(R.id.edittext_search);
         buttonSearch    = (Button) findViewById(R.id.button_search);
+        pDialogSearch   = new BuildProgressDialog(this);
     }
 
     private void requestNewInformation(String lastInfoId, String maxId) {
@@ -398,6 +401,25 @@ public class MainActivity extends AppCompatActivity {
         super.onRestoreInstanceState(savedInstanceState);
     }
 
+
+    private void showProgressDialog() {
+        try {
+            pDialogSearch.buildDefault(true, false
+                    , "Pesquisando.", "Aguarde enquando a pesquisa está sendo realizada.").safeShowing();
+        } catch (Exception e) {
+            Log.e("EXCEPTION", e.getMessage());
+        }
+    }
+
+    private void dismissProgressDialog() {
+        try {
+            pDialogSearch.safeDismiss();
+        } catch (Exception e) {
+            Log.e("EXCEPTION", e.getMessage());
+        }
+    }
+
+
     public void search(View view) {
         textSearched = editTextSearch.getText().toString();
         if(!textSearched.equals("") && accessToken != null /* && ! isServiceTwitterSearchBinded */) {
@@ -414,14 +436,13 @@ public class MainActivity extends AppCompatActivity {
         if(!isServiceTwitterAuthBinded) {
             connectionWithServiceTwitterAuth = new ConnectionWithServiceTwitterAuth(handlerAuthTwitter);
             Intent intent = new Intent(this, ServiceAuthTwitter.class);
-            // startService(intent);
-            // BIND_AUTO_CREATE
             isServiceTwitterAuthBinded = bindService(intent, connectionWithServiceTwitterAuth, Context.BIND_AUTO_CREATE);
             Log.i("MAIN_ACTIVITY", "BIND_SERVICE_TWITTER_AUTH");
         }
     }
 
     private boolean doBindServiceTwitterSearch(ServiceConnection serviceConnection, String text, String url) {
+        showProgressDialog();
         Intent intent = new Intent(getApplicationContext(), ServiceSearchTwitterAPI.class);
         Bundle bundle = new Bundle();
         bundle.putString(ServiceSearchTwitterAPI.TEXT_SEARCH, text);
@@ -463,6 +484,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void unBindTwitterSearchService() {
+        dismissProgressDialog();
         if(isServiceTwitterSearchBinded && connectionWithServiceTwitterSearch != null) {
             unbindService(connectionWithServiceTwitterSearch);
             isServiceTwitterSearchBinded = false;
@@ -470,6 +492,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void unBindServiceUpdateTwitterSearch() {
+        dismissProgressDialog();
         if(isServiceUpdateTwitterSearchBinded && connectionWithServiceUpdateTwitterSearch != null) {
             unbindService(connectionWithServiceUpdateTwitterSearch);
             isServiceUpdateTwitterSearchBinded = false;
