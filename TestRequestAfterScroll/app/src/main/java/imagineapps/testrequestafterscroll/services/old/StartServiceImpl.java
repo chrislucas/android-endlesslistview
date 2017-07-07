@@ -1,8 +1,11 @@
-package imagineapps.testrequestafterscroll.services;
+package imagineapps.testrequestafterscroll.services.old;
 
 import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
+
+import imagineapps.testrequestafterscroll.services.ServiceAuthTwitter;
+import imagineapps.testrequestafterscroll.services.ServiceSearchTwitterAPI;
 
 /**
  * Created by r028367 on 03/07/2017.
