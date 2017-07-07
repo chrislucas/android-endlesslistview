@@ -1,18 +1,14 @@
 package imagineapps.testrequestafterscroll;
 
 
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.Message;
-import android.os.Messenger;
 import android.os.Parcelable;
-import android.os.RemoteException;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -37,6 +33,10 @@ import imagineapps.testrequestafterscroll.http.RequestAuthTwitterAPI;
 import imagineapps.testrequestafterscroll.services.ServiceAuthTwitter;
 import imagineapps.testrequestafterscroll.services.ServiceDownloadBitmap;
 import imagineapps.testrequestafterscroll.services.ServiceSearchTwitterAPI;
+import imagineapps.testrequestafterscroll.services.connection.ConnectionWithDownloadBitmap;
+import imagineapps.testrequestafterscroll.services.connection.ConnectionWithServiceTwitterAuth;
+import imagineapps.testrequestafterscroll.services.connection.ConnectionWithServiceTwitterSearch;
+import imagineapps.testrequestafterscroll.services.connection.ConnectionWithServiceUpdateTwitterSearch;
 import imagineapps.testrequestafterscroll.utils.UtilsBitmap;
 
 public class MainActivity extends AppCompatActivity {
@@ -63,7 +63,8 @@ public class MainActivity extends AppCompatActivity {
     private String accessToken, textSearched;
     private int countPost;
 
-    private boolean isServiceTwitterAuthBinded = false
+    private boolean
+             isServiceTwitterAuthBinded = false
             ,isServiceTwitterSearchBinded = false
             ,isServiceDownloadBitmapBinded = false
             ,isServiceUpdateTwitterSearchBinded = false;
@@ -72,16 +73,16 @@ public class MainActivity extends AppCompatActivity {
     private ServiceSearchTwitterAPI serviceSearchTwitterAPI = null;
     private ServiceDownloadBitmap serviceDownloadBitmap     = null;
 
-    private static final String bindServiceTwitterAuth     = "bindServiceTwitterAuth";
-    private static final String bindServiceTwitterSearch   = "bindServiceTwitterSearch";
-    private static final String bindServiceDownloadBitmapBinded = "bindServiceDownloadBitmapBinded";
-    private static final String bindServiceUpdateTwitterSearch = "bindServiceUpdateTwitterSearch";
+    private static final String BIND_SERVICE_TWITTER_AUTH           = "BIND_SERVICE_TWITTER_AUTH";
+    private static final String BIND_SERVICE_TWITTER_SEARCH         = "BIND_SERVICE_TWITTER_SEARCH";
+    private static final String BIND_SERVICE_DOWNLOAD_BITMAP_BINDED = "BIND_SERVICE_DOWNLOAD_BITMAP_BINDED";
+    private static final String BIND_SERVICE_UPDATE_TWITTER_SEARCH  = "BIND_SERVICE_UPDATE_TWITTER_SEARCH";
 
-    private static final String BUNDLE_STRING_SEARCH = "BUNDLE_STRING_SEARCH";
-    private static final String BUNDLE_STRING_TOKEN = "BUNDLE_STRING_TOKEN";
-    private static final String BUNDLE_QUANTITY_POST = "BUNDLE_QUANTITY_POST";
-    private static final String BUNDLE_LIST_RESULT = "BUNDLE_LIST_RESULT";
-    private static final String BUNDLE_LIST_AUXILIAR = "BUNDLE_LIST_AUXILIAR";
+    private static final String BUNDLE_STRING_SEARCH    = "BUNDLE_STRING_SEARCH";
+    private static final String BUNDLE_STRING_TOKEN     = "BUNDLE_STRING_TOKEN";
+    private static final String BUNDLE_QUANTITY_POST    = "BUNDLE_QUANTITY_POST";
+    private static final String BUNDLE_LIST_RESULT      = "BUNDLE_LIST_RESULT";
+    private static final String BUNDLE_LIST_AUXILIAR    = "BUNDLE_LIST_AUXILIAR";
 
     public static final int HANDLER_MSG_AUTH_TWITTER        = 0xf0;
     public static final int HANDLER_MSG_TWITTER_SEARCH      = 0xf1;
@@ -227,91 +228,25 @@ public class MainActivity extends AppCompatActivity {
      * o serviso e iniciado atraves do metodo startService
      *
      * */
-
     private ServiceConnection connectionWithServiceTwitterAuth = null;
-    private void initializeConnectionServiceTwitterAuth() {
-        if(connectionWithServiceTwitterAuth == null) {
-            connectionWithServiceTwitterAuth = new ServiceConnection() {
-                @Override
-                public void onServiceConnected(ComponentName name, IBinder service) {
-                    serviceAuthTwitter = ((ServiceAuthTwitter.LocalBinder) service).getInstance();
-                    serviceAuthTwitter.setHandler(handlerAuthTwitter);
-                    serviceAuthTwitter.doRequest();
-                }
-                /**
-                 * Called when a connection to the Service has been lost. This typically happens
-                 * when the process hosting the service has crashed or been killed.
-                 * This does not remove the ServiceConnection itself
-                 * -- this binding to the service will remain active, and you will receive a call to
-                 * */
-                @Override
-                public void onServiceDisconnected(ComponentName name) {
-                    serviceAuthTwitter = null;
-                    isServiceTwitterAuthBinded = false;
-                    Log.v("SERVICE_DISCONNECTION", "TWITTER_AUTH");
-                }
-            };
-        }
-    }
-
     private ServiceConnection connectionWithServiceTwitterSearch = null;
     private void initConnectionWithServiceTwitterSearch() {
         if(connectionWithServiceTwitterSearch == null) {
-            connectionWithServiceTwitterSearch = new ServiceConnection() {
-                @Override
-                public void onServiceConnected(ComponentName name, IBinder service) {
-                    serviceSearchTwitterAPI = ( (ServiceSearchTwitterAPI.LocalBinder) service).getInstance();
-                    serviceSearchTwitterAPI.setHandler(handlerTwitterSearch);
-                    serviceSearchTwitterAPI.doRequest();
-                }
-                @Override
-                public void onServiceDisconnected(ComponentName name) {
-                    serviceSearchTwitterAPI = null;
-                    isServiceTwitterSearchBinded = false;
-                    Log.v("SERVICE_DISCONNECTION", "TWITTER_SEARCH");
-                }
-            };
+            connectionWithServiceTwitterSearch = new ConnectionWithServiceTwitterSearch(handlerTwitterSearch);
         }
     }
 
     private ServiceConnection connectionWithServiceUpdateTwitterSearch = null;
     private void initConnectionWithServiceUpdateTwitterSearch() {
         if(connectionWithServiceUpdateTwitterSearch == null) {
-            connectionWithServiceUpdateTwitterSearch = new ServiceConnection() {
-                @Override
-                public void onServiceConnected(ComponentName name, IBinder service) {
-                    serviceSearchTwitterAPI = ( (ServiceSearchTwitterAPI.LocalBinder) service).getInstance();
-                    serviceSearchTwitterAPI.setHandler(handlerTwitterSearchUpdate);
-                    serviceSearchTwitterAPI.doRequest();
-                }
-                @Override
-                public void onServiceDisconnected(ComponentName name) {
-                    serviceSearchTwitterAPI = null;
-                    isServiceUpdateTwitterSearchBinded = false;
-                    Log.v("SERVICE_DISCONNECTION", "UPDATE_TWITTER_SEARCH");
-                }
-            };
+            connectionWithServiceUpdateTwitterSearch = new ConnectionWithServiceUpdateTwitterSearch(handlerTwitterSearchUpdate);
         }
     }
 
     private ServiceConnection connectionWithDownloadBitmap = null;
     public void initializeConnectionWithDownloadBitmap() {
         if(connectionWithDownloadBitmap == null) {
-            connectionWithDownloadBitmap = new ServiceConnection() {
-                @Override
-                public void onServiceConnected(ComponentName name, IBinder service) {
-                    serviceDownloadBitmap = ( (ServiceDownloadBitmap.LocalBinder) service).getInstance();
-                    serviceDownloadBitmap.setHandler(handlerDownloadBitmap);
-                    serviceDownloadBitmap.doRequest();
-                }
-
-                @Override
-                public void onServiceDisconnected(ComponentName name) {
-                    serviceDownloadBitmap = null;
-                    isServiceDownloadBitmapBinded = false;
-                    Log.v("SERVICE_DISCONNECTION", "DOWNLOAD_BITMAP");
-                }
-            };
+            connectionWithDownloadBitmap = new ConnectionWithDownloadBitmap(handlerDownloadBitmap);
         }
     }
 
@@ -322,12 +257,13 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         if(savedInstanceState == null) {
             completeList = new ArrayList<>();
+            doBindServiceTwitterAuth();
         }
         else {
-            isServiceTwitterAuthBinded      = savedInstanceState.getBoolean(bindServiceTwitterAuth);
-            isServiceTwitterSearchBinded    = savedInstanceState.getBoolean(bindServiceTwitterSearch);
-            isServiceDownloadBitmapBinded   = savedInstanceState.getBoolean(bindServiceDownloadBitmapBinded);
-            isServiceUpdateTwitterSearchBinded = savedInstanceState.getBoolean(bindServiceUpdateTwitterSearch);
+            isServiceTwitterAuthBinded      = savedInstanceState.getBoolean(BIND_SERVICE_TWITTER_AUTH);
+            isServiceTwitterSearchBinded    = savedInstanceState.getBoolean(BIND_SERVICE_TWITTER_SEARCH);
+            isServiceDownloadBitmapBinded       = savedInstanceState.getBoolean(BIND_SERVICE_DOWNLOAD_BITMAP_BINDED);
+            isServiceUpdateTwitterSearchBinded  = savedInstanceState.getBoolean(BIND_SERVICE_UPDATE_TWITTER_SEARCH);
             textSearched    = savedInstanceState.getString(BUNDLE_STRING_SEARCH);
             accessToken     = savedInstanceState.getString(BUNDLE_STRING_TOKEN);
             completeList    = savedInstanceState.getParcelableArrayList(BUNDLE_LIST_RESULT);
@@ -346,7 +282,6 @@ public class MainActivity extends AppCompatActivity {
             public void onScrollStateChanged(AbsListView view, int scrollState) {
                 final ListView listView  = (ListView) view;
                 int firstVisiblePosition = listView.getFirstVisiblePosition();
-
                 /**
                  * Quando o usuario faz o movimento para cima para deslizar a lista
                  * isso representa um scroll down. Se o primeiro elemento que aparece na
@@ -392,8 +327,11 @@ public class MainActivity extends AppCompatActivity {
                  * */
                 if((qPosts - lastVisiblePosition) < 5) {
                     Log.i("UPDATE_POST", "FIM DA LISTA. DOWNLOAD_POSTS");
-                    if(textSearched != null && !textSearched.equals("") && accessToken != null) {
+                    if(textSearched != null && ! textSearched.equals("") && accessToken != null) {
                         requestNewInformation(lastInfoId, firstInfoId);
+                    }
+                    else {
+
                     }
                 }
             }
@@ -430,13 +368,14 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
+        doUnbindServices();
         if(outState != null) {
-            outState.putBoolean(bindServiceTwitterAuth, isServiceTwitterAuthBinded);
-            outState.putBoolean(bindServiceTwitterSearch, isServiceTwitterSearchBinded);
-            outState.putBoolean(bindServiceUpdateTwitterSearch, isServiceUpdateTwitterSearchBinded);
-            outState.putBoolean(bindServiceDownloadBitmapBinded, isServiceDownloadBitmapBinded);
-            outState.putString(textSearched, BUNDLE_STRING_SEARCH);
-            outState.putString(accessToken, BUNDLE_STRING_TOKEN);
+            outState.putBoolean(BIND_SERVICE_TWITTER_AUTH, isServiceTwitterAuthBinded);
+            outState.putBoolean(BIND_SERVICE_TWITTER_SEARCH, isServiceTwitterSearchBinded);
+            outState.putBoolean(BIND_SERVICE_UPDATE_TWITTER_SEARCH, isServiceUpdateTwitterSearchBinded);
+            outState.putBoolean(BIND_SERVICE_DOWNLOAD_BITMAP_BINDED, isServiceDownloadBitmapBinded);
+            outState.putString(BUNDLE_STRING_SEARCH, textSearched);
+            outState.putString(BUNDLE_STRING_TOKEN, accessToken);
             outState.putParcelableArrayList(BUNDLE_LIST_RESULT, (ArrayList<? extends Parcelable>) completeList);
             outState.putParcelableArrayList(BUNDLE_LIST_AUXILIAR, (ArrayList<? extends Parcelable>) auxiliarList);
             outState.putInt(BUNDLE_QUANTITY_POST, countPost);
@@ -445,18 +384,18 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
         if(savedInstanceState != null) {
-            isServiceTwitterAuthBinded          = savedInstanceState.getBoolean(bindServiceTwitterAuth);
-            isServiceTwitterSearchBinded        = savedInstanceState.getBoolean(bindServiceTwitterSearch);
-            isServiceUpdateTwitterSearchBinded  = savedInstanceState.getBoolean(bindServiceUpdateTwitterSearch);
-            isServiceDownloadBitmapBinded       = savedInstanceState.getBoolean(bindServiceDownloadBitmapBinded);
+            isServiceTwitterAuthBinded          = savedInstanceState.getBoolean(BIND_SERVICE_TWITTER_AUTH);
+            isServiceTwitterSearchBinded        = savedInstanceState.getBoolean(BIND_SERVICE_TWITTER_SEARCH);
+            isServiceUpdateTwitterSearchBinded  = savedInstanceState.getBoolean(BIND_SERVICE_UPDATE_TWITTER_SEARCH);
+            isServiceDownloadBitmapBinded       = savedInstanceState.getBoolean(BIND_SERVICE_DOWNLOAD_BITMAP_BINDED);
             textSearched = savedInstanceState.getString(BUNDLE_STRING_SEARCH);
             accessToken  = savedInstanceState.getString(BUNDLE_STRING_TOKEN);
             completeList = savedInstanceState.getParcelableArrayList(BUNDLE_LIST_RESULT);
             auxiliarList = savedInstanceState.getParcelableArrayList(BUNDLE_LIST_AUXILIAR);
-            countPost = savedInstanceState.getInt(BUNDLE_QUANTITY_POST);
+            countPost    = savedInstanceState.getInt(BUNDLE_QUANTITY_POST);
         }
+        super.onRestoreInstanceState(savedInstanceState);
     }
 
     public void search(View view) {
@@ -473,9 +412,12 @@ public class MainActivity extends AppCompatActivity {
 
     private void doBindServiceTwitterAuth() {
         if(!isServiceTwitterAuthBinded) {
-            initializeConnectionServiceTwitterAuth();
+            connectionWithServiceTwitterAuth = new ConnectionWithServiceTwitterAuth(handlerAuthTwitter);
             Intent intent = new Intent(this, ServiceAuthTwitter.class);
+            // startService(intent);
+            // BIND_AUTO_CREATE
             isServiceTwitterAuthBinded = bindService(intent, connectionWithServiceTwitterAuth, Context.BIND_AUTO_CREATE);
+            Log.i("MAIN_ACTIVITY", "BIND_SERVICE_TWITTER_AUTH");
         }
     }
 
@@ -513,29 +455,29 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void unBindTwitterAuthService() {
-        if(isServiceTwitterAuthBinded) {
+        if(isServiceTwitterAuthBinded && connectionWithServiceTwitterAuth != null) {
             unbindService(connectionWithServiceTwitterAuth);
-            connectionWithServiceTwitterAuth = null;
             isServiceTwitterAuthBinded = false;
+            Log.i("MAIN_ACTIVITY", "UNBIND_TWITTER_AUTH_SERVICE");
         }
     }
 
     private void unBindTwitterSearchService() {
-        if(isServiceTwitterSearchBinded) {
+        if(isServiceTwitterSearchBinded && connectionWithServiceTwitterSearch != null) {
             unbindService(connectionWithServiceTwitterSearch);
             isServiceTwitterSearchBinded = false;
         }
     }
 
     private void unBindServiceUpdateTwitterSearch() {
-        if(isServiceUpdateTwitterSearchBinded) {
+        if(isServiceUpdateTwitterSearchBinded && connectionWithServiceUpdateTwitterSearch != null) {
             unbindService(connectionWithServiceUpdateTwitterSearch);
             isServiceUpdateTwitterSearchBinded = false;
         }
     }
 
     private void unBindDownloadBitmapService() {
-        if(isServiceDownloadBitmapBinded) {
+        if(isServiceDownloadBitmapBinded && connectionWithDownloadBitmap != null) {
             unbindService(connectionWithDownloadBitmap);
             isServiceDownloadBitmapBinded = false;
         }
@@ -544,7 +486,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        doBindServiceTwitterAuth();
     }
 
     @Override

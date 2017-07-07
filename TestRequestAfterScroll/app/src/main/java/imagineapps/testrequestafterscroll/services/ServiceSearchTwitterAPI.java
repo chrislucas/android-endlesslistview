@@ -22,7 +22,7 @@ import imagineapps.uptolv.action.DoAsyncTasks;
  * TODO: Customize class - update intent actions, extra parameters and static
  * helper methods.
  */
-public class ServiceSearchTwitterAPI extends Service /*IntentService*/ {
+public class ServiceSearchTwitterAPI extends Service {
 
     private String querySearch, authorization, url;
     public static final String TEXT_SEARCH          = "TEXT_SEARCH";

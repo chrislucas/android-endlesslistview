@@ -85,6 +85,7 @@ public class RequestAuthTwitterAPI extends ModelHTTPRequest {
     @Override
     public List<Parcelable> execute() {
         List<Parcelable> data = new ArrayList<>();
+        Log.i("REQUEST_TWITTER_AUTH", "DO_REQUEST");
         try {
             String url = getUrl();
             Map<String, String> params = getParameters();

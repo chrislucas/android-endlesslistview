@@ -42,7 +42,6 @@ public class UtilsBitmap {
         return bytes;
     }
 
-
     public static Bitmap uncompress(byte [] buffer) {
         Bitmap bmp = BitmapFactory.decodeByteArray(buffer, 0, buffer.length);
         return bmp;
