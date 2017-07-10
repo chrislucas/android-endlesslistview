@@ -23,22 +23,22 @@ import imagineapps.uptolv.utils.http.ModelHTTPRequest;
  * Created by r028367 on 03/07/2017.
  */
 
-public class RequestAuthTwitterAPI extends ModelHTTPRequest {
+public class AuthTwitterAPI extends ModelHTTPRequest {
 
     private static final String KEY     = "lrCqswUocOPi6FAgGljnUdSZK";
     private static final String SECRET  = "oTjwPTCJZjljcyIfYDMMwFyB7W0FbcrY5jxMO2JvU6nnA6OSyE";
 
     private Handler handler;
 
-    public RequestAuthTwitterAPI(String url) {
+    public AuthTwitterAPI(String url) {
         super(url);
     }
 
-    public RequestAuthTwitterAPI(String url, Map<String, String> parameters) {
+    public AuthTwitterAPI(String url, Map<String, String> parameters) {
         super(url, parameters);
     }
 
-    public RequestAuthTwitterAPI(Handler handler, String url, Map<String, String> parameters) {
+    public AuthTwitterAPI(Handler handler, String url, Map<String, String> parameters) {
         super(url, parameters);
         this.handler = handler;
     }
@@ -89,10 +89,10 @@ public class RequestAuthTwitterAPI extends ModelHTTPRequest {
         try {
             String url = getUrl();
             Map<String, String> params = getParameters();
-            HttpRequest request = HttpRequest.post(url);
+            HttpRequest request = HttpRequest.post(url, params, true);
             String response = request
                     .authorization("Basic " + generate(KEY, SECRET))
-                    .form(params)
+                    //.form(params)
                     .body();
             JSONObject jsonObject   = new JSONObject(response);
             AuthTwitter authTwitter = new AuthTwitter();

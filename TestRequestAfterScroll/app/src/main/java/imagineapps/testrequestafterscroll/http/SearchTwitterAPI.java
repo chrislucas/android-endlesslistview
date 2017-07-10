@@ -18,7 +18,7 @@ import java.util.Map;
 
 import imagineapps.testrequestafterscroll.MainActivity;
 import imagineapps.testrequestafterscroll.utils.UtilsSimpleFormatDate;
-import imagineapps.testrequestafterscroll.entitiy.Info;
+import imagineapps.testrequestafterscroll.entitiies.Info;
 import imagineapps.uptolv.utils.http.ModelHTTPRequest;
 
 /**

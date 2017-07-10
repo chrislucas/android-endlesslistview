@@ -28,8 +28,8 @@ import java.util.Collections;
 import java.util.List;
 
 import imagineapps.testrequestafterscroll.adapter.AdapterListView;
-import imagineapps.testrequestafterscroll.entitiy.Info;
-import imagineapps.testrequestafterscroll.http.RequestAuthTwitterAPI;
+import imagineapps.testrequestafterscroll.entitiies.Info;
+import imagineapps.testrequestafterscroll.http.AuthTwitterAPI;
 import imagineapps.testrequestafterscroll.services.ServiceAuthTwitter;
 import imagineapps.testrequestafterscroll.services.ServiceDownloadBitmap;
 import imagineapps.testrequestafterscroll.services.ServiceSearchTwitterAPI;
@@ -98,9 +98,9 @@ public class MainActivity extends AppCompatActivity {
         public void handleMessage(Message msg) {
             if(msg.what == HANDLER_MSG_AUTH_TWITTER) {
                 Bundle bundle   = msg.getData();
-                ArrayList<RequestAuthTwitterAPI.AuthTwitter> list = bundle.getParcelableArrayList(BUNDLE_DATA_ARRAYLIST_API);
+                ArrayList<AuthTwitterAPI.AuthTwitter> list = bundle.getParcelableArrayList(BUNDLE_DATA_ARRAYLIST_API);
                 if(list != null && list.size() > 0) {
-                    RequestAuthTwitterAPI.AuthTwitter authTwitter = list.get(0);
+                    AuthTwitterAPI.AuthTwitter authTwitter = list.get(0);
                     if(authTwitter != null) {
                         try {
                             JSONObject jsonObject = authTwitter.getJsonObject();
@@ -125,7 +125,8 @@ public class MainActivity extends AppCompatActivity {
                     ArrayList<Info> data = bundle.getParcelableArrayList(BUNDLE_DATA_ARRAYLIST_API);
                     if(data != null && data.size() > 0) {
                         updateListInfo(data);
-                        doBindServiceDownloadBitmap();
+                        // testando a biblioteca picasso
+                        //doBindServiceDownloadBitmap();
                     }
                 }
                 unBindTwitterSearchService();
@@ -143,7 +144,8 @@ public class MainActivity extends AppCompatActivity {
                     if(data != null && data.size() > 0) {
                         updateListInfo(data);
                         adapterListView.notifyDataSetChanged();
-                        doBindServiceDownloadBitmap();
+                        // testando a biblioteca picasso
+                        //doBindServiceDownloadBitmap();
                         updateInfoSizeList();
                     }
                 }
@@ -223,14 +225,14 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Ponto interessante sobre serviços vinculados
      *
-     * Se criarmos um serviço vinculado, o desenolvedor nao precisa
+     * Se criarmos um serviço vinculado, o desenvolvedor nao precisa
      * se preocupar com o ciclo de vida dele. O sistema operacional
      * se encarrega de encerrar os serviços vinculados, a não ser que ele tenha
      * sido iniciado através do metodo onStartCommand, que eh executado quando
      * o serviso e iniciado atraves do metodo startService
      *
      * */
-    private ServiceConnection connectionWithServiceTwitterAuth = null;
+    private ServiceConnection connectionWithServiceTwitterAuth   = null;
     private ServiceConnection connectionWithServiceTwitterSearch = null;
     private void initConnectionWithServiceTwitterSearch() {
         if(connectionWithServiceTwitterSearch == null) {
@@ -245,6 +247,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Usando a biblioteca Picasso, o Servico abaixo torna-se dispensavel
+     * */
     private ServiceConnection connectionWithDownloadBitmap = null;
     public void initializeConnectionWithDownloadBitmap() {
         if(connectionWithDownloadBitmap == null) {
@@ -262,8 +267,8 @@ public class MainActivity extends AppCompatActivity {
             doBindServiceTwitterAuth();
         }
         else {
-            isServiceTwitterAuthBinded      = savedInstanceState.getBoolean(BIND_SERVICE_TWITTER_AUTH);
-            isServiceTwitterSearchBinded    = savedInstanceState.getBoolean(BIND_SERVICE_TWITTER_SEARCH);
+            isServiceTwitterAuthBinded          = savedInstanceState.getBoolean(BIND_SERVICE_TWITTER_AUTH);
+            isServiceTwitterSearchBinded        = savedInstanceState.getBoolean(BIND_SERVICE_TWITTER_SEARCH);
             isServiceDownloadBitmapBinded       = savedInstanceState.getBoolean(BIND_SERVICE_DOWNLOAD_BITMAP_BINDED);
             isServiceUpdateTwitterSearchBinded  = savedInstanceState.getBoolean(BIND_SERVICE_UPDATE_TWITTER_SEARCH);
             textSearched    = savedInstanceState.getString(BUNDLE_STRING_SEARCH);
@@ -422,7 +427,10 @@ public class MainActivity extends AppCompatActivity {
 
     public void search(View view) {
         textSearched = editTextSearch.getText().toString();
-        if(!textSearched.equals("") && accessToken != null /* && ! isServiceTwitterSearchBinded */) {
+        if(accessToken == null) {
+            doBindServiceTwitterAuth();
+        }
+        if(!textSearched.equals("")) {
             String url = Uri.parse(String.format("https://api.twitter.com/1.1/" +
                     "search/tweets.json?q=%s&lang=%s&count=%d", textSearched, "pt", LIMIT_SEARCH)).toString();
             url = url.replaceAll("\\s", "%20");

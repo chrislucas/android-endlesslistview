@@ -3,7 +3,6 @@ package imagineapps.testrequestafterscroll.services;
 import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -15,7 +14,7 @@ import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 
-import imagineapps.testrequestafterscroll.http.RequestAuthTwitterAPI;
+import imagineapps.testrequestafterscroll.http.AuthTwitterAPI;
 import imagineapps.uptolv.action.DoOnBackground;
 import imagineapps.uptolv.action.DoAsyncTasks;
 
@@ -64,7 +63,7 @@ public class ServiceAuthTwitter extends Service {
         String url = "https://api.twitter.com/oauth2/token";
         Map<String, String> params  = new HashMap<>();
         params.put("grant_type", "client_credentials");
-        DoOnBackground action       = new RequestAuthTwitterAPI(getHandler(), url, params);
+        DoOnBackground action       = new AuthTwitterAPI(getHandler(), url, params);
         DoAsyncTasks doAsyncTasks   = new DoAsyncTasks(action);
         doAsyncTasks.execute();
     }

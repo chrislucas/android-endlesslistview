@@ -12,11 +12,14 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.squareup.picasso.Callback;
+import com.squareup.picasso.Picasso;
+
 import java.util.List;
 
 import imagineapps.testrequestafterscroll.R;
 import imagineapps.testrequestafterscroll.utils.UtilsSimpleFormatDate;
-import imagineapps.testrequestafterscroll.entitiy.Info;
+import imagineapps.testrequestafterscroll.entitiies.Info;
 
 /**
  * Created by r028367 on 03/07/2017.
@@ -122,6 +125,26 @@ public class AdapterListView extends ArrayAdapter<Info> {
             Bitmap bitmap = info.getImage();
             if(bitmap != null) {
                 viewHolder.getImageInfo().setImageBitmap(bitmap);
+            }
+            else {
+                String url = info.getUrlImage();
+                Picasso picasso = Picasso.with(context);
+                picasso.setIndicatorsEnabled(true);
+                picasso.load(url)
+                        .placeholder(R.drawable.placeholder1)
+                        .error(R.drawable.erro_placeholder1)
+                        .into(viewHolder.getImageInfo(), new Callback() {
+                            @Override
+                            public void onSuccess() {
+
+                            }
+
+                            @Override
+                            public void onError() {
+
+                            }
+                        });
+
             }
             viewHolder.getTextInfo().setText(info.getText());
             viewHolder.getTitle().setText(info.getTitle());

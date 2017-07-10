@@ -9,7 +9,7 @@ import android.os.IBinder;
 
 import java.util.List;
 
-import imagineapps.testrequestafterscroll.entitiy.Info;
+import imagineapps.testrequestafterscroll.entitiies.Info;
 import imagineapps.testrequestafterscroll.http.BgDownloadBitmap;
 import imagineapps.uptolv.action.DoAsyncTasks;
 
@@ -81,8 +81,8 @@ public class ServiceDownloadBitmap extends Service {
     }
 
     public void doRequest() {
-        BgDownloadBitmap bgDownloadBitmap = new BgDownloadBitmap(infoList, handler);
-        DoAsyncTasks doAsyncTasks     = new DoAsyncTasks(bgDownloadBitmap);
+        BgDownloadBitmap bgDownloadBitmap = new BgDownloadBitmap(infoList, handler, this);
+        DoAsyncTasks doAsyncTasks         = new DoAsyncTasks(bgDownloadBitmap);
         doAsyncTasks.execute();
     }
 
