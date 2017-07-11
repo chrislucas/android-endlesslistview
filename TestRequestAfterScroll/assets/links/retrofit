@@ -1,1 +1,10 @@
 http://square.github.io/retrofit/
+
+Retrofit 2
+https://zeroturnaround.com/rebellabs/getting-started-with-retrofit-2/
+
+Como fazer requisicoes com retrofit sem precisar converter para JSON
+https://stackoverflow.com/questions/32617770/how-to-get-response-as-string-using-retrofit-without-using-gson-or-any-other-lib
+
+
+https://code.tutsplus.com/tutorials/sending-data-with-retrofit-2-http-client-for-android--cms-27845

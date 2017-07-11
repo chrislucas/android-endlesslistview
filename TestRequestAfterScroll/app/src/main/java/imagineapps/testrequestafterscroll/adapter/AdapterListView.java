@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -136,12 +137,12 @@ public class AdapterListView extends ArrayAdapter<Info> {
                         .into(viewHolder.getImageInfo(), new Callback() {
                             @Override
                             public void onSuccess() {
-
+                                Log.i("DOWNLOAD_IMAGE", "SUCCESS");
                             }
 
                             @Override
                             public void onError() {
-
+                                Log.i("DOWNLOAD_IMAGE", "FAILURED");
                             }
                         });
 

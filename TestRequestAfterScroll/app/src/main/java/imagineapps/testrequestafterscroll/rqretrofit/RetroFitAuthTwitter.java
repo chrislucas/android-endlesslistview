@@ -1,5 +1,8 @@
 package imagineapps.testrequestafterscroll.rqretrofit;
 
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Base64;
 import android.util.Log;
 
@@ -18,7 +21,14 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class RetroFitAuthTwitter {
     private Token token;
-    public Token getToken() {
+    private Handler handler;
+    public static final String HANDLER_MESSAGE_TOKEN = "HANDLER_MESSAGE_TOKEN";
+    public static final int HANDLER_MESSAGE = 0x0c;
+    public RetroFitAuthTwitter(Handler handler) {
+        this.handler = handler;
+    }
+
+    public void getToken() {
         OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
         Retrofit.Builder builder = new Retrofit
                 .Builder()
@@ -27,14 +37,18 @@ public class RetroFitAuthTwitter {
         Retrofit retrofit = builder.client(httpClient.build()).build();
         EndPointTokenTwitter endPointTokenTwitter = retrofit.create(EndPointTokenTwitter.class);
         Call<Token> call = endPointTokenTwitter.get("Basic " + generate(), "client_credentials");
+
+        final Message message = new Message();
+        message.what = HANDLER_MESSAGE;
+
         call.enqueue(new retrofit2.Callback<Token>() {
             @Override
             public void onResponse(Call<Token> call, retrofit2.Response<Token> response) {
                 token = response.body();
-                if(token != null) {
-                    Log.i("TOKEN", token.getAccessToken());
-                }
-                Request request = call.request();
+                Bundle bundle   = new Bundle();
+                bundle.putString(HANDLER_MESSAGE_TOKEN, token.getAccessToken());
+                message.setData(bundle);
+                sendMessage();
             }
 
             @Override
@@ -42,9 +56,15 @@ public class RetroFitAuthTwitter {
                 if(throwable != null) {
                     Log.e("ON_FAILURE", throwable.getMessage());
                 }
+                sendMessage();
+            }
+
+            private void sendMessage() {
+                handler.sendMessage(message);
             }
         });
-        return token;
+
+        return;
     }
 
 
