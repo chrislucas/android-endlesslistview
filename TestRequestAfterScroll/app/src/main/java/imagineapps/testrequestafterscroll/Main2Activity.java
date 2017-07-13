@@ -1,6 +1,7 @@
 package imagineapps.testrequestafterscroll;
 
 import android.content.Context;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Parcelable;
@@ -23,6 +24,7 @@ import imagineapps.testrequestafterscroll.adapter.AdapterListView;
 import imagineapps.testrequestafterscroll.entitiies.Info;
 import imagineapps.testrequestafterscroll.rqretrofit.RetroFitAuthTwitter;
 import imagineapps.testrequestafterscroll.rqretrofit.RetroFitSearchTweets;
+import imagineapps.testrequestafterscroll.utils.BuildDatabase;
 import imagineapps.testrequestafterscroll.utils.BuildProgressDialog;
 
 /**
@@ -75,7 +77,6 @@ public class Main2Activity extends AppCompatActivity {
             accessToken = savedInstanceState.getString(BUNDLE_ACCESS_TOKEN);
             textSearched = savedInstanceState.getString(BUNDLE_TEXT_SEARCHED);
         }
-
         quantityMessage = (TextView) findViewById(R.id.quantity_data);
         int resource = android.R.layout.simple_list_item_1;
         adapterListView = new AdapterListView(this, resource, completeList);
@@ -147,6 +148,19 @@ public class Main2Activity extends AppCompatActivity {
         pDialogSearch   = new BuildProgressDialog(this);
         if(accessToken == null)
             getAccessToken();
+        updateInfoSizeList();
+        configDatabase();
+    }
+
+    private void configDatabase() {
+        if(!BuildDatabase.checkDbExists(this)) {
+            boolean create = BuildDatabase.createDbIfNotExists(this);
+            if(create) {
+                /**
+                 * Se a Base foi criada, criar a tabela de Posts
+                 * */
+            }
+        }
     }
 
     private Handler handler = new Handler() {

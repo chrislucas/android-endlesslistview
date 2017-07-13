@@ -350,6 +350,7 @@ public class MainActivity extends AppCompatActivity {
         editTextSearch  = (EditText) findViewById(R.id.edittext_search);
         buttonSearch    = (Button) findViewById(R.id.button_search);
         pDialogSearch   = new BuildProgressDialog(this);
+        updateInfoSizeList();
     }
 
     private void requestNewInformation(String lastInfoId, String maxId) {
