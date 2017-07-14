@@ -52,7 +52,7 @@ public class Main2Activity extends AppCompatActivity {
      * que foram pesquisados na API do TWITTER e colocalos na lista completa dos twitts baixados
      */
         ,auxiliarList;
-    private int countPost;
+    private int countPost, countDownloadPost;
     private static final int MIN_RESULT_SEARCH = 7;
     private static final int MIN_SIZE_TO_SAVE  = 14;
 
@@ -64,9 +64,9 @@ public class Main2Activity extends AppCompatActivity {
     public static final String BUNDLE_ACCESS_TOKEN       = "BUNDLE_ACCESS_TOKEN";
     public static final String BUNDLE_TEXT_SEARCHED      = "BUNDLE_TEXT_SEARCHED";
     public static final String BUNDLE_DOING_SEARCH       = "BUNDLE_DOING_SEARCH";
+    public static final String BUNDLE_COUNT_DOWNLOAD     = "BUNDLE_DOING_SEARCH";
 
     private TableHelperInfo tableHelperInfo = null;
-
     private boolean doingSearch = false;
 
     @Override
@@ -297,6 +297,7 @@ public class Main2Activity extends AppCompatActivity {
             outState.putParcelableArrayList(BUNLDE_COMPLETE_INFO_LIST, (ArrayList<? extends Parcelable>) completeList);
             outState.putParcelableArrayList(BUNLDE_AUXILIAR_INFO_LIST, (ArrayList<? extends Parcelable>) auxiliarList);
             outState.putInt(BUNLDE_SIZE_INFO_LIST, countPost);
+            outState.putInt(BUNDLE_COUNT_DOWNLOAD, countDownloadPost);
             outState.putString(BUNDLE_ACCESS_TOKEN, accessToken);
             outState.putString(BUNDLE_TEXT_SEARCHED, textSearched);
             outState.putBoolean(BUNDLE_DOING_SEARCH, doingSearch);
@@ -310,6 +311,7 @@ public class Main2Activity extends AppCompatActivity {
             completeList    = savedInstanceState.getParcelableArrayList(BUNLDE_COMPLETE_INFO_LIST);
             auxiliarList    = savedInstanceState.getParcelableArrayList(BUNLDE_AUXILIAR_INFO_LIST);
             countPost       = savedInstanceState.getInt(BUNLDE_SIZE_INFO_LIST);
+            countDownloadPost = savedInstanceState.getInt(BUNDLE_COUNT_DOWNLOAD);
             accessToken     = savedInstanceState.getString(BUNDLE_ACCESS_TOKEN);
             textSearched    = savedInstanceState.getString(BUNDLE_TEXT_SEARCHED);
             doingSearch     = savedInstanceState.getBoolean(BUNDLE_DOING_SEARCH);
@@ -350,13 +352,11 @@ public class Main2Activity extends AppCompatActivity {
          * um scroll e baixar um post, sera implementado u
          *
          * */
-        long mod = completeList.size() % MIN_SIZE_TO_SAVE;
-        /**
-         * Deixar a lista completa ficar no minimo o 2 x a quantidade de posts baixos - 1
-         * */
-        if(mod == MIN_SIZE_TO_SAVE-1 || mod == 0 ) {
+        countDownloadPost %= MIN_SIZE_TO_SAVE;
+        if(countDownloadPost == 0 ) {
             saveList();
         }
+
         String text = getTextSearched();
         if( text != null ) {
             RetroFitSearchTweets retroFitSearchTweets = new RetroFitSearchTweets(handler);
@@ -388,7 +388,10 @@ public class Main2Activity extends AppCompatActivity {
             // de l ate h (h sendo exclusivo)
             Log.i("RANGE", String.format("(%d, %d)", lowerLimit, higherLimit));
             List<Info> subList = completeList.subList(lowerLimit, higherLimit);
-            tableHelperInfo.insertAll(subList);
+            boolean saveAll = tableHelperInfo.insertAll(subList);
+            if(!saveAll) {
+
+            }
         }
     }
 
@@ -418,6 +421,7 @@ public class Main2Activity extends AppCompatActivity {
             /**
              * Podemos salvar os novos posts assim que forem baixados.
              * */
+            countDownloadPost += data.size();
             auxiliarList = new ArrayList<>();
             auxiliarList.addAll(data);
             int lastIdx = completeList.size() == 0 ? 0 : completeList.size() - 1;
