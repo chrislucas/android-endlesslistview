@@ -173,7 +173,7 @@ public class AdapterListView extends ArrayAdapter<Info> {
             viewHolder.getTitle().setPaintFlags(viewHolder.getTitle().getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
             viewHolder.getSubtitle().setText(info.getSubtitle());
             // "EEE MMM d, yyyy HH:mm:ss"
-            viewHolder.getDate().setText(UtilsSimpleFormatDate.convertLongToDateFormat(info.getDate(), "d, MMM yyyy HH:mm"));
+            viewHolder.getDate().setText(UtilsSimpleFormatDate.convertLongToDateFormat(info.getDate(), "d, MMM yyyy HH:mm:ss"));
             viewHolder.getTimeAgo().setText(info.getTimeAgo());
         }
         return convertView;

@@ -352,7 +352,7 @@ public class Main2Activity extends AppCompatActivity {
          * um scroll e baixar um post, sera implementado u
          *
          * */
-        countDownloadPost %= MIN_SIZE_TO_SAVE;
+        // se countDownloadPost % MIN_SIZE_TO_SAVE == 0
         if(countDownloadPost == 0 ) {
             saveList();
         }
@@ -421,12 +421,13 @@ public class Main2Activity extends AppCompatActivity {
             /**
              * Podemos salvar os novos posts assim que forem baixados.
              * */
-            countDownloadPost += data.size();
+            countDownloadPost = (countDownloadPost + data.size()) % MIN_SIZE_TO_SAVE;
+            Log.i("SUMMATION_POSTS", String.valueOf(countDownloadPost));
             auxiliarList = new ArrayList<>();
             auxiliarList.addAll(data);
             int lastIdx = completeList.size() == 0 ? 0 : completeList.size() - 1;
             completeList.addAll(lastIdx, auxiliarList);
-            Collections.sort(completeList);
+            //Collections.sort(completeList);
             adapterListView.notifyDataSetChanged();
             updateInfoSizeList();
         }

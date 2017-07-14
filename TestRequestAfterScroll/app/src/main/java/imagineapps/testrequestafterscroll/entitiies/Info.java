@@ -172,7 +172,7 @@ public class Info implements Parcelable, Comparable {
             if((diffInSeconds / 86400) < 31) {
                 // numero de segundos num dia
                 diffInSeconds /= 86400;
-                message = String.format("Há aprox. %d %s.", diffInSeconds, diffInSeconds > 1 ? "dias" : "dias");
+                message = String.format("Há aprox. %d %s.", diffInSeconds, diffInSeconds > 1 ? "dias" : "dia");
             }
             else {
                 // numero de segundos em um mês de 30 dias = 2592000
