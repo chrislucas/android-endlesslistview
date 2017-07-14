@@ -33,7 +33,9 @@
             android:enabled="true"
             android:exported="true" />
 
-        <activity android:name=".Main2Activity">
+        <activity
+            android:name=".Main2Activity"
+            android:label="@string/prototype_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

@@ -5,7 +5,9 @@
     <string name="example_title">Esse é o primeiro post desse App lindo</string>
     <string name="example_text_info">Aliquam eu eleifend quam. Sed odio sapien, pretium eget eleifend et, placerat eget sem. In lacinia commodo turpis eu cursus. Curabitur eu erat massa. Vivamus et augue urna. Sed id nisl non ligula viverra egestas. Sed nec pretium purus. Etiam non nulla elit.</string>
     <string name="descrition_image_default">Imagem vinculada ao post</string>
-    <string name="example_date">12 Dez, 2017</string>
+    <string name="example_date">12 Dez, 2017 12:45</string>
     <string name="sample_text_quantity_data">nenhuma mensagem</string>
     <string name="activity_1">Request Sem RetroFit</string>
+    <string name="example_time_ago">aprox. 12 min.</string>
+    <string name="prototype_name">AppPostPrototipo</string>
 </resources>

@@ -2,6 +2,7 @@ package imagineapps.testrequestafterscroll.adapter;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Paint;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -47,7 +48,7 @@ public class AdapterListView extends ArrayAdapter<Info> {
 
     private class ViewHolder {
         private ImageView imageInfo;
-        private TextView title, textInfo, date;
+        private TextView title, subtitle, textInfo, date, timeAgo;
         public ViewHolder() {}
 
         public ImageView getImageInfo() {
@@ -81,6 +82,22 @@ public class AdapterListView extends ArrayAdapter<Info> {
         public void setDate(TextView date) {
             this.date = date;
         }
+
+        public TextView getSubtitle() {
+            return subtitle;
+        }
+
+        public void setSubtitle(TextView subtitle) {
+            this.subtitle = subtitle;
+        }
+
+        public TextView getTimeAgo() {
+            return timeAgo;
+        }
+
+        public void setTimeAgo(TextView timeAgo) {
+            this.timeAgo = timeAgo;
+        }
     }
 
     @Nullable
@@ -113,11 +130,15 @@ public class AdapterListView extends ArrayAdapter<Info> {
                 ImageView imageView = (ImageView) convertView.findViewById(R.id.image_info);
                 TextView textInfo   = (TextView) convertView.findViewById(R.id.text_info);
                 TextView titleInfo  = (TextView) convertView.findViewById(R.id.title_info);
+                TextView subTitleInfo  = (TextView) convertView.findViewById(R.id.subtitle_info);
                 TextView dateInfo   = (TextView) convertView.findViewById(R.id.date_info);
+                TextView timeAgo    = (TextView) convertView.findViewById(R.id.time_ago);
                 viewHolder.setImageInfo(imageView);
                 viewHolder.setTextInfo(textInfo);
                 viewHolder.setTitle(titleInfo);
+                viewHolder.setSubtitle(subTitleInfo);
                 viewHolder.setDate(dateInfo);
+                viewHolder.setTimeAgo(timeAgo);
                 convertView.setTag(viewHolder);
             }
             else {
@@ -149,7 +170,11 @@ public class AdapterListView extends ArrayAdapter<Info> {
             }
             viewHolder.getTextInfo().setText(info.getText());
             viewHolder.getTitle().setText(info.getTitle());
-            viewHolder.getDate().setText(UtilsSimpleFormatDate.convertLongToDateFormat(info.getDate(), "EEE MMM d, yyyy HH:mm:ss"));
+            viewHolder.getTitle().setPaintFlags(viewHolder.getTitle().getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
+            viewHolder.getSubtitle().setText(info.getSubtitle());
+            // "EEE MMM d, yyyy HH:mm:ss"
+            viewHolder.getDate().setText(UtilsSimpleFormatDate.convertLongToDateFormat(info.getDate(), "d, MMM yyyy HH:mm"));
+            viewHolder.getTimeAgo().setText(info.getTimeAgo());
         }
         return convertView;
     }

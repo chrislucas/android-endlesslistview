@@ -1,7 +1,6 @@
 package imagineapps.testrequestafterscroll;
 
 import android.content.Context;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Parcelable;
@@ -15,12 +14,14 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import imagineapps.testrequestafterscroll.adapter.AdapterListView;
+import imagineapps.testrequestafterscroll.db.helpers.TableHelperInfo;
 import imagineapps.testrequestafterscroll.entitiies.Info;
 import imagineapps.testrequestafterscroll.rqretrofit.RetroFitAuthTwitter;
 import imagineapps.testrequestafterscroll.rqretrofit.RetroFitSearchTweets;
@@ -52,7 +53,9 @@ public class Main2Activity extends AppCompatActivity {
      */
         ,auxiliarList;
     private int countPost;
-    private static final int LIMIT_SEARCH = 7;
+    private static final int MIN_RESULT_SEARCH = 7;
+    private static final int MIN_SIZE_TO_SAVE  = 14;
+
     private BuildProgressDialog pDialogSearch;
 
     public static final String BUNLDE_COMPLETE_INFO_LIST = "BUNLDE_COMPLETE_INFO_LIST";
@@ -60,6 +63,11 @@ public class Main2Activity extends AppCompatActivity {
     public static final String BUNLDE_SIZE_INFO_LIST     = "BUNLDE_SIZE_INFO_LIST";
     public static final String BUNDLE_ACCESS_TOKEN       = "BUNDLE_ACCESS_TOKEN";
     public static final String BUNDLE_TEXT_SEARCHED      = "BUNDLE_TEXT_SEARCHED";
+    public static final String BUNDLE_DOING_SEARCH       = "BUNDLE_DOING_SEARCH";
+
+    private TableHelperInfo tableHelperInfo = null;
+
+    private boolean doingSearch = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,18 +75,31 @@ public class Main2Activity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         if(savedInstanceState == null) {
-            completeList = new ArrayList<>();
+            /**
+             * metodo de configuracao da base de dados esta aqui por esse projeto se tratar
+             * de um prototipo
+             * Lembrar de coloca-lo numa activity que funcione como splash screen
+             * */
+            configDatabase();
+            TableHelperInfo tableHelperInfo = getTableHelperInfo();
+            completeList = tableHelperInfo.getAll();
+            if(completeList.size() > 0)
+                Collections.sort(completeList);
+            /**
+             * Para o app de verdade, se a lista estiver vazia, implementar
+             * um metodo que busque os ultimos N posts da API da empresa
+             * */
+            auxiliarList = new ArrayList<>();
         }
-
         else {
-            completeList = savedInstanceState.getParcelableArrayList(BUNLDE_COMPLETE_INFO_LIST);
-            auxiliarList = savedInstanceState.getParcelableArrayList(BUNLDE_AUXILIAR_INFO_LIST);
-            countPost = savedInstanceState.getInt(BUNLDE_SIZE_INFO_LIST);
-            accessToken = savedInstanceState.getString(BUNDLE_ACCESS_TOKEN);
-            textSearched = savedInstanceState.getString(BUNDLE_TEXT_SEARCHED);
+            completeList    = savedInstanceState.getParcelableArrayList(BUNLDE_COMPLETE_INFO_LIST);
+            auxiliarList    = savedInstanceState.getParcelableArrayList(BUNLDE_AUXILIAR_INFO_LIST);
+            countPost       = savedInstanceState.getInt(BUNLDE_SIZE_INFO_LIST);
+            accessToken     = savedInstanceState.getString(BUNDLE_ACCESS_TOKEN);
+            textSearched    = savedInstanceState.getString(BUNDLE_TEXT_SEARCHED);
         }
         quantityMessage = (TextView) findViewById(R.id.quantity_data);
-        int resource = android.R.layout.simple_list_item_1;
+        int resource    = android.R.layout.simple_list_item_1;
         adapterListView = new AdapterListView(this, resource, completeList);
         listView = (ListView) findViewById(R.id.list_data);
         listView.setAdapter(adapterListView);
@@ -105,17 +126,38 @@ public class Main2Activity extends AppCompatActivity {
                 );
                 // a lista vem em ordem decrescente por data
                 Info lastInfo       = completeList.get(0);
-                Info firstInfo      = auxiliarList.get(auxiliarList.size() - 1);
-                String lastInfoId   = lastInfo.getId();
+                Info firstInfo      = null;
+                /**]
+                 *
+                 * Se a lista auxiliar estiver vazia e ocorrer um scroll
+                 * quer dizer que o usuario tinha posts armazenados na base de dados
+                 * */
+                if(auxiliarList.size() == 0) {
+                    // o primeiro da lista completa eh o mais recente
+                    firstInfo = completeList.get(0);
+                }
+                else {
+                    firstInfo = auxiliarList.get(auxiliarList.size() - 1);
+                }
                 String firstInfoId  = firstInfo.getId();
+                int diff = (qPosts - lastVisiblePosition);
                 switch (scrollState) {
                     // O usuario executou o
                     case SCROLL_STATE_FLING:
-                        if(!scrollUp && (qPosts - lastVisiblePosition) < 5) {
+                        if(!scrollUp &&  diff > 0 && diff  < 3) {
                             Log.i("UPDATE_POST", "DOWNLOAD_POSTS");
-                            if(textSearched != null && !textSearched.equals("") && accessToken != null) {
+                            if(textSearched != null && !textSearched.equals("") && accessToken != null && ! doingSearch) {
                                 research(firstInfoId);
                             }
+                        }
+                        /**
+                         * TODO
+                         * implementar funcionalidade para pesquisar na API caso o usuario faça
+                         * scroll para cima.
+                         * Pesquisar N posts a partir do post com a data mais antiga no app, para tras
+                         * */
+                        else {
+
                         }
                         break;
                     // A view nao foi rolada
@@ -127,15 +169,23 @@ public class Main2Activity extends AppCompatActivity {
                 }
                 lastVisiblePosition = firstVisiblePosition;
                 /**
-                 * Se o usuario chager ao fim da lista, o listener nao sabera identificar
+                 * Se o usuario chegar ao fim da lista, o listener nao sabera identificar
                  * que o mesmo pode fazer um movimento da tela
                  * */
-                if((qPosts - lastVisiblePosition) < 5) {
+                if(!scrollUp &&  (diff > 0 && diff  < 3) && ! doingSearch) {
                     Log.i("UPDATE_POST", "FIM DA LISTA. DOWNLOAD_POSTS");
                     if(textSearched != null && ! textSearched.equals("") && accessToken != null) {
                         research(firstInfoId);
                     }
-                    else {}
+                }
+                /**
+                 * TODO
+                 * implementar funcionalidade para pesquisar na API caso o usuario faça
+                 * scroll para cima.
+                 * Pesquisar N posts a partir do post com a data mais antiga no app, para tras
+                 * */
+                else {
+
                 }
             }
             @Override
@@ -149,7 +199,6 @@ public class Main2Activity extends AppCompatActivity {
         if(accessToken == null)
             getAccessToken();
         updateInfoSizeList();
-        configDatabase();
     }
 
     private void configDatabase() {
@@ -159,6 +208,8 @@ public class Main2Activity extends AppCompatActivity {
                 /**
                  * Se a Base foi criada, criar a tabela de Posts
                  * */
+                TableHelperInfo tableHelperInfo = getTableHelperInfo();
+                tableHelperInfo.createTable();
             }
         }
     }
@@ -189,6 +240,8 @@ public class Main2Activity extends AppCompatActivity {
                     updateListInfo(data);
                     break;
             }
+            if(doingSearch)
+                doingSearch = false;
             dismissProgressDialog();
         }
     };
@@ -203,11 +256,27 @@ public class Main2Activity extends AppCompatActivity {
         retroFitAuthTwitter.getToken();
     }
 
+    private TableHelperInfo getTableHelperInfo() {
+        if(tableHelperInfo == null) {
+            try {
+                tableHelperInfo = new TableHelperInfo(this);
+                /**
+                 * O metodo createTable talvez nao fique aqui numa versao de aplicativo real.
+                 * Esse eh so um prototipo
+                 * */
+                tableHelperInfo.createTable();
+            }
+            catch (Exception e) {
+                Log.e("ERR_TBL_HELPER_INFO", e.getMessage());
+            }
+        }
+        return tableHelperInfo;
+    }
 
-    private void showProgressDialog() {
+    private void showProgressDialog(String title, String message) {
         try {
             pDialogSearch.buildDefault(true, false
-                    , "Pesquisando.", "Aguarde enquando a pesquisa está sendo realizada.").safeShowing();
+                    , title, message).safeShowing();
         } catch (Exception e) {
             Log.e("EXCEPTION", e.getMessage());
         }
@@ -230,6 +299,7 @@ public class Main2Activity extends AppCompatActivity {
             outState.putInt(BUNLDE_SIZE_INFO_LIST, countPost);
             outState.putString(BUNDLE_ACCESS_TOKEN, accessToken);
             outState.putString(BUNDLE_TEXT_SEARCHED, textSearched);
+            outState.putBoolean(BUNDLE_DOING_SEARCH, doingSearch);
         }
     }
 
@@ -242,6 +312,7 @@ public class Main2Activity extends AppCompatActivity {
             countPost       = savedInstanceState.getInt(BUNLDE_SIZE_INFO_LIST);
             accessToken     = savedInstanceState.getString(BUNDLE_ACCESS_TOKEN);
             textSearched    = savedInstanceState.getString(BUNDLE_TEXT_SEARCHED);
+            doingSearch     = savedInstanceState.getBoolean(BUNDLE_DOING_SEARCH);
         }
     }
 
@@ -257,18 +328,80 @@ public class Main2Activity extends AppCompatActivity {
         String text = getTextSearched();
         if( text != null) {
             RetroFitSearchTweets retroFitSearchTweets = new RetroFitSearchTweets(handler);
-            retroFitSearchTweets.search(accessToken, text, "pt", LIMIT_SEARCH);
-            showProgressDialog();
+            retroFitSearchTweets.search(accessToken, text, "pt", MIN_RESULT_SEARCH);
+            showProgressDialog("Pesquisando.", "Aguarde enquando a pesquisa está sendo realizada.");
+            doingSearch = true;
         }
         hiddenKeyBoard();
     }
 
+    /**
+     * TODO guando o usuario fizer scroll na lista de post, realizar uma nova pesquisa por
+     * mais Posts.
+     * */
     private void research(String nextId) {
+        doingSearch = true;
+        /**
+         * TODO para evitar fazer IO no banco a cada scroll vamos implementar
+         * uma regra que verifique se a lista de posts tem um tamanho minimo
+         * Assim, guaradamos N posts de uma unica vez
+         *
+         * Para não realizar inserções na base de dados toda vez que o usuairo fizer
+         * um scroll e baixar um post, sera implementado u
+         *
+         * */
+        long mod = completeList.size() % MIN_SIZE_TO_SAVE;
+        /**
+         * Deixar a lista completa ficar no minimo o 2 x a quantidade de posts baixos - 1
+         * */
+        if(mod == MIN_SIZE_TO_SAVE-1 || mod == 0 ) {
+            saveList();
+        }
         String text = getTextSearched();
         if( text != null ) {
             RetroFitSearchTweets retroFitSearchTweets = new RetroFitSearchTweets(handler);
-            retroFitSearchTweets.update(accessToken, textSearched, "pt", LIMIT_SEARCH, nextId);
-            showProgressDialog();
+            retroFitSearchTweets.update(accessToken, textSearched, "pt", MIN_RESULT_SEARCH, nextId);
+            showProgressDialog("Buscando novos Posts.", "Aguarde enquando a pesquisa está sendo realizada.");
+        }
+    }
+
+    /**
+     * TODO implementar algoritmo para salvar a lista de Posts no BANCO
+     *
+     * Enquanto o usuario executa o scroll na lista, mais pots sao baixados.
+     * Precisamos guardar essa informacao no banco de dados para que o usuario
+     * nao precise baixar um Post toda a vez que ele quiser ve-lo.
+     *
+     * */
+    private void saveList() {
+        Toast.makeText(this, "Salvando posts", Toast.LENGTH_SHORT).show();
+        TableHelperInfo tableHelperInfo = getTableHelperInfo();
+        if(tableHelperInfo != null) {
+            Log.i("SAVING_POSTS", "Iniciando processo de armazenamneto de posts");
+            /**
+             * Criar uma sublista da lista completa, para salvar somente os posts novos
+             * evitando de salvar informacao repitida
+             * */
+            int size        = completeList.size();
+            int higherLimit = size;
+            int lowerLimit  = size - MIN_SIZE_TO_SAVE;
+            // de l ate h (h sendo exclusivo)
+            Log.i("RANGE", String.format("(%d, %d)", lowerLimit, higherLimit));
+            List<Info> subList = completeList.subList(lowerLimit, higherLimit);
+            tableHelperInfo.insertAll(subList);
+        }
+    }
+
+    private void saveList2() {
+        TableHelperInfo tableHelperInfo = getTableHelperInfo();
+        if(tableHelperInfo != null) {
+            Log.i("SAVING_POSTS", "Iniciando processo de armazenamneto de posts");
+            /**
+             * Criar uma sublista da lista completa, para salvar somente os posts novos
+             * evitando de salvar informacao repitida
+             *
+             * */
+            tableHelperInfo.insertAll(auxiliarList);
         }
     }
 
@@ -282,14 +415,20 @@ public class Main2Activity extends AppCompatActivity {
 
     private void updateListInfo(List<Info> data) {
         if(data != null || data.size() > 0) {
+            /**
+             * Podemos salvar os novos posts assim que forem baixados.
+             * */
             auxiliarList = new ArrayList<>();
             auxiliarList.addAll(data);
             int lastIdx = completeList.size() == 0 ? 0 : completeList.size() - 1;
             completeList.addAll(lastIdx, auxiliarList);
             Collections.sort(completeList);
             adapterListView.notifyDataSetChanged();
+            updateInfoSizeList();
         }
-        updateInfoSizeList();
+        else {
+            Toast.makeText(this, "Não a mais Posts recentes", Toast.LENGTH_LONG).show();
+        }
     }
 
     private void updateInfoSizeList() {
@@ -303,4 +442,6 @@ public class Main2Activity extends AppCompatActivity {
             }
         });
     }
+
+
 }

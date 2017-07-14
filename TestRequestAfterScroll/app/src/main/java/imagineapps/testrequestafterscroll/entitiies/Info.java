@@ -5,6 +5,8 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
 
+import java.util.Calendar;
+
 import imagineapps.testrequestafterscroll.utils.UtilsSimpleFormatDate;
 
 /**
@@ -16,7 +18,7 @@ public class Info implements Parcelable, Comparable {
     private String id;
     private Bitmap image;
     private byte [] imageBuffer;
-    private String title, text, urlImage;
+    private String title, subtitle, text, urlImage;
     private Long date;
 
     public Bitmap getImage() {
@@ -33,6 +35,14 @@ public class Info implements Parcelable, Comparable {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getSubtitle() {
+        return subtitle;
+    }
+
+    public void setSubtitle(String subtitle) {
+        this.subtitle = subtitle;
     }
 
     public String getText() {
@@ -80,6 +90,7 @@ public class Info implements Parcelable, Comparable {
     public Info(Parcel in) {
         this.title       = in.readString();
         this.text        = in.readString();
+        this.subtitle    = in.readString();
         this.urlImage    = in.readString();
         this.image       = (Bitmap) in.readValue(Bitmap.class.getClassLoader());
         this.date        = (Long) in.readValue(Long.class.getClassLoader());
@@ -96,6 +107,7 @@ public class Info implements Parcelable, Comparable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(this.title);
         dest.writeString(this.text);
+        dest.writeString(this.subtitle);
         dest.writeString(this.urlImage);
         dest.writeValue(this.image);
         dest.writeValue(this.date);
@@ -126,5 +138,54 @@ public class Info implements Parcelable, Comparable {
         Info info = (Info) o;
         long c = info.getDate() - this.getDate();
         return ( c < 0 ) ? -1 : (c == 0) ? 0 : 1;
+    }
+
+    /**
+     * TODO
+     *
+     * */
+    public String getTimeAgo() {
+        long createAt       = this.date;
+        Calendar calendar       = Calendar.getInstance();
+        // aprox
+        // 1 ano  = 31104000000 ms
+        // 1 mes  = 2592000000 ms
+        // 1 dia  = 86400000 ms
+        // 1 hora = 3600000 ms
+        long currentTime = calendar.getTimeInMillis();
+        long diffInSeconds = (currentTime - createAt) / 1000;
+        String message = "";
+        if(diffInSeconds < 60) {
+            message = String.format("Há aprox. %d seg.", diffInSeconds);
+        }
+        else if(diffInSeconds > 59 && diffInSeconds < 3600) {
+            diffInSeconds /= 60;
+            message = String.format("Há aprox. %d min.", diffInSeconds);
+        }
+
+        else if(diffInSeconds > 3599 &&  diffInSeconds < 86400) {
+            diffInSeconds /= 3600;
+            message = String.format("Há aprox. %d %s.", diffInSeconds, diffInSeconds > 1 ? "horas" : "hora");
+        }
+
+        else {
+            if((diffInSeconds / 86400) < 31) {
+                // numero de segundos num dia
+                diffInSeconds /= 86400;
+                message = String.format("Há aprox. %d %s.", diffInSeconds, diffInSeconds > 1 ? "dias" : "dias");
+            }
+            else {
+                // numero de segundos em um mês de 30 dias = 2592000
+                if( (diffInSeconds / 2592000) < 12) {
+                    diffInSeconds /= 2592000;
+                    message = String.format("Há aprox. %d %s.", diffInSeconds, diffInSeconds > 1 ? "meses" : "mês");
+                }
+                else {
+                    diffInSeconds /= 31104000;
+                    message = String.format("Há aprox. %d %s.", diffInSeconds, diffInSeconds > 1 ? "anos" : "ano");
+                }
+            }
+        }
+        return message;
     }
 }

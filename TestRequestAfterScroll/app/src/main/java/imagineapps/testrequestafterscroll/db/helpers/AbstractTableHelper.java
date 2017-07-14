@@ -45,6 +45,6 @@ public abstract class AbstractTableHelper {
         return getCursor(db, sql, null);
     }
 
-    protected abstract boolean createTable();
+    public abstract boolean createTable();
 
 }

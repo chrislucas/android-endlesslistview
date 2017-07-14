@@ -38,9 +38,7 @@ public class DatabaseHelper extends SQLiteOpenHelper{
         InputStream inputStream = null;
         try {
             AssetManager assetManager = context.getAssets();
-            //String [] locales = assetManager.getLocales();
-            inputStream = assetManager.open(filename);
-            //inputStream = new FileInputStream(new File(filename));
+            inputStream = assetManager.open(filename);;
             if(inputStream != null) {
                 properties = new Properties();
                 properties.load(inputStream);
@@ -61,8 +59,12 @@ public class DatabaseHelper extends SQLiteOpenHelper{
         return properties;
     }
 
+    private static String getBasePath(Context context) {
+        String path = new ContextWrapper(context).getFilesDir().getPath();
+        return path;
+    }
+
     private static Properties getDbVersion(Context context) {
-        //String path = new ContextWrapper(context).getFilesDir().getPath();
         Properties properties = readProperties(context, "properties/db.properties");
         return properties;
     }
@@ -80,19 +82,18 @@ public class DatabaseHelper extends SQLiteOpenHelper{
             super(message);
         }
     }
-    public synchronized static DatabaseHelper getInstance(Context context) throws IOPropertyException {
-        Properties properties = getDbVersion(context);
-        if(properties == null) {
-            throw new IOPropertyException("Não foi possível ler o arquivo de configuração do banco");
-        }
-        else  {
-            int version = Integer.parseInt(properties.getProperty("version"));
-            if(DatabaseHelper.instance == null) {
+    public static DatabaseHelper getInstance(Context context) throws IOPropertyException {
+        if(DatabaseHelper.instance == null) {
+            Properties properties = getDbVersion(context);
+            if(properties == null) {
+                throw new IOPropertyException("Não foi possível ler o arquivo de configuração do banco");
+            }
+            else {
+                int version = Integer.parseInt(properties.getProperty("version"));
                 DatabaseHelper.instance = new DatabaseHelper(context, DB_NAME, null, version);
                 DatabaseHelper.instance.context = context;
             }
         }
-
         return instance;
     }
 
@@ -170,6 +171,14 @@ public class DatabaseHelper extends SQLiteOpenHelper{
      */
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        if(db != null) {
+
+        }
+    }
+
+    @Override
+    public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        super.onDowngrade(db, oldVersion, newVersion);
         if(db != null) {
 
         }

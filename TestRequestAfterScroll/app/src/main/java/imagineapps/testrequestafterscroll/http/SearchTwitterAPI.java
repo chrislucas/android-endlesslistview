@@ -88,12 +88,13 @@ public class SearchTwitterAPI extends ModelHTTPRequest {
                         String createAt = tweetInfo.getString("created_at");
                         long time       = UtilsSimpleFormatDate.convertUTCToMilliseconds(createAt, "EEE MMM d HH:mm:ss Z yyyy");
                         info.setDate(time);
-                        //String dateFmt  = UtilsSimpleFormatDate.convertLongToDateFormat(time);
+                        //String dateFmt            = UtilsSimpleFormatDate.convertLongToDateFormat(time);
                         JSONObject jsonUser         = tweetInfo.getJSONObject("user");
                         //String urlImageUser       = jsonUser.getString("profile_image_url");
                         String urlImageBackground   = jsonUser.getString("profile_background_image_url");
                         String userName             = jsonUser.getString("name");
                         info.setTitle(userName);
+                        info.setSubtitle(userName);
                         info.setUrlImage(urlImageBackground);
                         data.add(info);
                     }

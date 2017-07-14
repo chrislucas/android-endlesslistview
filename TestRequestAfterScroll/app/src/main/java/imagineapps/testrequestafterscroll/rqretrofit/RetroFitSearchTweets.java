@@ -65,11 +65,10 @@ public class RetroFitSearchTweets {
         @SerializedName("id")
         @Expose
         private String id;
-
         @SerializedName("user")
         @Expose
-
         private User user;
+
         public Post(String createdAt, String text, String id, User user) {
             this.createdAt  = createdAt;
             this.text       = text;
@@ -130,7 +129,7 @@ public class RetroFitSearchTweets {
 
         EndPointTweet endPointTweet = retrofit.create(EndPointTweet.class);
 
-        Call<Data> callListTwitt = endPointTweet.searchTwitterAPI("Bearer " + accessToken //+ "1"
+        Call<Data> callListTwitt = endPointTweet.searchTwitterAPI("Bearer " + accessToken
                 , query, lang, count);
 
         final Message message = new Message();
@@ -218,6 +217,7 @@ public class RetroFitSearchTweets {
             info.setUrlImage(post.getUser().getPathImageBackground());
             info.setText(post.getText());
             info.setTitle(post.getUser().getName());
+            info.setSubtitle("Subtitulo exemplo");
             String createAt = post.getCreatedAt();
             long time       = UtilsSimpleFormatDate.convertUTCToMilliseconds(createAt, "EEE MMM d HH:mm:ss Z yyyy");
             info.setDate(time);
