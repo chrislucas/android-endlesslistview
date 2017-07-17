@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AbsListView;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -90,6 +91,7 @@ public class Main2Activity extends AppCompatActivity {
              * um metodo que busque os ultimos N posts da API da empresa
              * */
             auxiliarList = new ArrayList<>();
+            countDownloadPost = 0;
         }
         else {
             completeList    = savedInstanceState.getParcelableArrayList(BUNLDE_COMPLETE_INFO_LIST);
@@ -215,11 +217,6 @@ public class Main2Activity extends AppCompatActivity {
     }
 
     private Handler handler = new Handler() {
-        /**
-         * Subclasses must implement this to receive messages.
-         *
-         * @param msg
-         */
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
@@ -353,7 +350,7 @@ public class Main2Activity extends AppCompatActivity {
          *
          * */
         // se countDownloadPost % MIN_SIZE_TO_SAVE == 0
-        if(countDownloadPost == 0 ) {
+        if(countDownloadPost == 0) {
             saveList();
         }
 
@@ -421,8 +418,11 @@ public class Main2Activity extends AppCompatActivity {
             /**
              * Podemos salvar os novos posts assim que forem baixados.
              * */
-            countDownloadPost = (countDownloadPost + data.size()) % MIN_SIZE_TO_SAVE;
-            Log.i("SUMMATION_POSTS", String.valueOf(countDownloadPost));
+            countDownloadPost += data.size();
+            if(countDownloadPost >= MIN_SIZE_TO_SAVE) {
+                Log.i("SUMMATION_POSTS", String.valueOf(countDownloadPost));
+                countDownloadPost = 0;
+            }
             auxiliarList = new ArrayList<>();
             auxiliarList.addAll(data);
             int lastIdx = completeList.size() == 0 ? 0 : completeList.size() - 1;

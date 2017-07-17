@@ -15,6 +15,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.squareup.picasso.Callback;
+import com.squareup.picasso.MemoryPolicy;
+import com.squareup.picasso.NetworkPolicy;
 import com.squareup.picasso.Picasso;
 
 import java.util.List;
@@ -116,6 +118,7 @@ public class AdapterListView extends ArrayAdapter<Info> {
         return super.getCount();
     }
 
+
     @NonNull
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
@@ -149,21 +152,60 @@ public class AdapterListView extends ArrayAdapter<Info> {
                 viewHolder.getImageInfo().setImageBitmap(bitmap);
             }
             else {
-                String url = info.getUrlImage();
-                Picasso picasso = Picasso.with(context);
+                final String url = info.getUrlImage();
+                final Picasso picasso = Picasso.with(context);
+                /**
+                 * Indicador de cache
+                 * RED: A venho da rede
+                 * GREEN: Memoria Volatil
+                 * BLUE: Disco
+                 * */
                 picasso.setIndicatorsEnabled(true);
+                /**
+                 * Forma que a biblioteca faz cache das imagens
+                 * https://futurestud.io/tutorials/picasso-influencing-image-caching
+                 *
+                 * A biblioteca verifica se a imagem esta na memoria cache virtual,
+                 * depois na memoria cache em disco, caso nao esteja em cache, a image
+                 * e baixada.
+                 * https://square.github.io/picasso/2.x/picasso/com/squareup/picasso/NetworkPolicy.html#OFFLINE
+                 * */
+                final ViewHolder finalInstance = viewHolder;
                 picasso.load(url)
+                        // ignora a pesquisa pela imagem no cache de memoria volatil
+                        //.memoryPolicy(MemoryPolicy.NO_CACHE)
+                        // nao armazena a imagem em cache apos o downlaod
+                        //.memoryPolicy(MemoryPolicy.NO_STORE)
+                        // nao pesquisa imagem na memoria volatil, forçando a pesquisa usando a internet
+                        //.networkPolicy(NetworkPolicy.NO_CACHE)
+                        // nao armazena imagem na memoria permanente
+                        //.networkPolicy(NetworkPolicy.NO_STORE)
+                        // busca a imagem no cache em disco, nao busca na rede
+                        .networkPolicy(NetworkPolicy.OFFLINE)
                         .placeholder(R.drawable.placeholder1)
                         .error(R.drawable.erro_placeholder1)
                         .into(viewHolder.getImageInfo(), new Callback() {
                             @Override
                             public void onSuccess() {
-                                Log.i("DOWNLOAD_IMAGE", "SUCCESS");
+                                Log.i("GET_IMAGE_OFFLINE", "SUCCESS");
                             }
-
                             @Override
                             public void onError() {
-                                Log.i("DOWNLOAD_IMAGE", "FAILURED");
+                                Log.e("GET_IMAGE_OFFLINE", "FAILURED");
+                                picasso.load(url)
+                                        .placeholder(R.drawable.placeholder1)
+                                        .error(R.drawable.erro_placeholder1)
+                                        .into(finalInstance.getImageInfo(), new Callback() {
+                                            @Override
+                                            public void onSuccess() {
+                                                Log.i("GET_IMAGE_ONLINE", "SUCCESS");
+                                            }
+
+                                            @Override
+                                            public void onError() {
+                                                Log.e("GET_IMAGE_ONLINE", "FAILURED");
+                                            }
+                                        });
                             }
                         });
 
@@ -173,7 +215,7 @@ public class AdapterListView extends ArrayAdapter<Info> {
             viewHolder.getTitle().setPaintFlags(viewHolder.getTitle().getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
             viewHolder.getSubtitle().setText(info.getSubtitle());
             // "EEE MMM d, yyyy HH:mm:ss"
-            viewHolder.getDate().setText(UtilsSimpleFormatDate.convertLongToDateFormat(info.getDate(), "d, MMM yyyy HH:mm:ss"));
+            viewHolder.getDate().setText(UtilsSimpleFormatDate.convertLongToDateFormat(info.getDate(), "d, MMM yyyy HH:mm"));
             viewHolder.getTimeAgo().setText(info.getTimeAgo());
         }
         return convertView;
