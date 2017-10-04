@@ -177,7 +177,8 @@ public class RetroFitSearchTweets {
 
         final Message message = new Message();
         message.what = HANDLER_MESSAGE_GET_NEW_TWEET;
-        Call<Data> callListTwitt = endPointTweet.updateSearchTwitterAPI("Bearer " + accessToken, query, lang, count, maxId);
+        Call<Data> callListTwitt = endPointTweet.updateSearchTwitterAPI("Bearer "
+                + accessToken, query, lang, count, maxId);
         callListTwitt.enqueue(new Callback<Data>() {
             @Override
             public void onResponse(Call<Data> call, Response<Data> response) {

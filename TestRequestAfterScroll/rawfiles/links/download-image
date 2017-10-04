@@ -14,3 +14,9 @@ http://stacktips.com/tutorials/android/how-to-use-picasso-library-in-android
 
 Loading Large Bitmaps Efficiently
 https://developer.android.com/topic/performance/graphics/load-bitmap.html
+
+
+Log
+07-19 08:59:20.161 7212-7231/? I/PlayCommon: [505] com.google.android.play.a.g.e(220): Preparing logs for uploading
+07-19 08:59:20.330 7212-7231/? I/PlayCommon: [505] com.google.android.play.a.g.a(434): Connecting to server: https://play.googleapis.com/play/log?format=raw&proto_v2=true
+07-19 08:59:20.338 7212-7231/? E/PlayCommon: [505] com.google.android.play.a.g.a(464): Failed to connect to server: java.net.UnknownHostException: Unable to resolve host "play.googleapis.com": No address associated with hostname
